@@ -83,6 +83,7 @@ Repository claims use these maturity labels:
 
 Start with the engineering evidence:
 
+- [Authoritative implementation status](IMPLEMENTATION_STATUS.md)
 - [Baseline and lineage](BASELINE.md)
 - [Engineering plan](ENGINEERING_PLAN.md)
 - [Challenge traceability](TECHGIUM_TRACEABILITY.md)
