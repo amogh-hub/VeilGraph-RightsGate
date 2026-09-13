@@ -7,7 +7,7 @@ python-multipart==0.0.32
 PyMuPDF==1.26.7
 Pillow==12.3.0
 pytesseract==0.3.13
-opencv-python-headless==4.13.0.92
+opencv-python-headless==5.0.0.93
 cryptography==50.0.1
 c2pa-python==0.37.10
 reportlab==4.4.4
