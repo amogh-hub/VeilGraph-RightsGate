@@ -24,7 +24,7 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | ING-01 | Process images | INHERITED | Corpus ingestion and parser-safety tests |
 | ING-02 | Process video | INHERITED | Full-timeline and audio-track tests |
 | ING-03 | Process standalone audio | PLANNED | Decoder, canonicalization and malformed-file tests |
-| PROV-01 | Verify content credentials/C2PA | PLANNED | Valid, invalid, mismatched, stripped and replayed credential fixtures |
+| PROV-01 | Verify content credentials/C2PA | IMPLEMENTED | Official offline SDK adapter and no-manifest/status-mapping tests; signed, mismatched, stripped and replayed fixtures remain for `VALIDATED` |
 | PROV-02 | Assess wholly AI-generated media | PLANNED | Frozen multi-generator test split with calibration and FPR |
 | PROV-03 | Assess partial generation or manipulation | PLANNED | Splice/inpaint/localization fixtures with region/timeline scoring |
 | PROV-04 | Detect provenance metadata or watermark tampering | PLANNED | Removal, forgery, collision and transformation attack matrix |

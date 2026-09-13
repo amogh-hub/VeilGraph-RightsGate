@@ -6,7 +6,7 @@
 
 VeilGraph RightsGate is a challenge-focused product line derived from the frozen [VeilGraph](https://github.com/amogh-hub/VeilGraph) privacy-engineering system. The source repository remains unchanged. This repository targets the TECHgium challenge **“Safeguarding Content Rights in the Age of AI-Generated Media.”**
 
-**Status:** `FOUNDATION VALIDATED` · `DOMAIN CONTRACT IMPLEMENTED` · `RIGHTS DETECTORS PLANNED`
+**Status:** `FOUNDATION VALIDATED` · `DOMAIN CONTRACT IMPLEMENTED` · `C2PA ADAPTER IMPLEMENTED` · `RIGHTS DETECTORS PLANNED`
 
 ![VeilGraph RightsGate architecture](docs/architecture/rightsgate-architecture.svg)
 
@@ -23,7 +23,9 @@ The inherited VeilGraph foundation already provides:
 
 Those capabilities are inherited engineering assets, not evidence that the new challenge is already solved. AI-generation detection, provenance verification and rights-matching modules are explicitly planned work until their implementation and benchmark evidence land in this repository.
 
-The implemented RightsGate boundary now includes strict, versioned `AssetIR`, assessment-request, evidence/claim, Asset Exposure Graph and three-dimension result schemas. Referential integrity, explicit abstention and fail-closed release invariants have automated tests. No challenge-specific detector is represented as implemented or validated yet.
+The implemented RightsGate boundary now includes strict, versioned `AssetIR`, assessment-request, evidence/claim, Asset Exposure Graph and three-dimension result schemas. Referential integrity, explicit abstention and fail-closed release invariants have automated tests.
+
+The first provenance adapter uses the official CAI `c2pa-python` SDK in local-only mode. It reads and validates embedded Content Credentials, recognizes the IPTC declarations for AI-generated and AI-edited media, retains validation-status evidence, and distinguishes cryptographic mismatches from an untrusted signer. It is `IMPLEMENTED`, not yet `VALIDATED`: signed, tampered and transformed frozen fixture evaluation remains required before competition metrics are claimed.
 
 ## Product contract
 
@@ -130,6 +132,7 @@ Request validation is content-addressed: identical assessment inputs produce the
 ```text
 backend/                    FastAPI engine, graph, policy, verification and proof
 backend/app/rightsgate/     Versioned RightsGate contracts and validation API
+backend/app/rightsgate/provenance/  Offline provenance adapters
 frontend/                   React/Vite review and release interface
 competition/techgium10/     Competition-specific narrative and evidence
 docs/adr/                   Architecture decisions

@@ -40,6 +40,8 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 2 — Build the provenance lane
 
+**Status:** IN PROGRESS — offline C2PA verification and conservative IPTC generative-source mapping are implemented with bounded unit/integration tests. Signed fixture, attack-matrix, trust-store and forensic-adapter work remains before exit.
+
 - Verify C2PA credentials and bind them to the exact asset bytes.
 - Inspect declared provenance metadata and supported invisible-watermark signals.
 - Add pluggable image, video and audio forensic adapters.
