@@ -10,6 +10,6 @@ pytesseract==0.3.13
 opencv-python-headless==4.13.0.92
 cryptography==50.0.1
 c2pa-python==0.37.10
-reportlab==4.4.4
+reportlab==5.0.1
 pytest==9.1.1
 httpx==0.28.1
