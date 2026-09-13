@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "VeilGraph",
-    "description": "Local-first privacy compiler with Identity Exposure Graph, L1\u2013L5 transformations, fail-closed adversarial verification, cryptographic retention expiry, signed proof packages and Phase-2 production/security/scale controls.",
+    "title": "VeilGraph RightsGate",
+    "description": "Evidence-first pre-publication media trust gateway derived from VeilGraph. The current API exposes the inherited privacy foundation and versioned RightsGate contracts; challenge-specific detector availability is declared separately.",
     "version": "0.6.1-phase2-final-hardening"
   },
   "paths": {
@@ -1171,6 +1171,112 @@
           }
         }
       }
+    },
+    "/api/v1/rightsgate/contracts": {
+      "get": {
+        "tags": [
+          "RightsGate contracts"
+        ],
+        "summary": "Get Contracts",
+        "description": "Return canonical JSON Schemas for the implemented Gate 1 boundary.",
+        "operationId": "get_contracts_api_v1_rightsgate_contracts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractBundleResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rightsgate/requests/validate": {
+      "post": {
+        "tags": [
+          "RightsGate contracts"
+        ],
+        "summary": "Validate Request",
+        "description": "Validate and fingerprint an idempotent assessment request envelope.",
+        "operationId": "validate_request_api_v1_rightsgate_requests_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RightsGateAssessmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestValidationReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rightsgate/assessments/validate": {
+      "post": {
+        "tags": [
+          "RightsGate contracts"
+        ],
+        "summary": "Validate Assessment",
+        "description": "Validate an externally assembled result without granting release authority.",
+        "operationId": "validate_assessment_api_v1_rightsgate_assessments_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RightsGateAssessment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentValidationReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1398,6 +1504,340 @@
           "status"
         ],
         "title": "AnalysisResponse"
+      },
+      "AssessmentContext": {
+        "properties": {
+          "policy_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Policy Id"
+          },
+          "policy_version": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Policy Version"
+          },
+          "intended_use": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Intended Use"
+          },
+          "channel": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Channel"
+          },
+          "audience": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Audience"
+          },
+          "territories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Territories"
+          },
+          "brand_profile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand Profile"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "policy_id",
+          "policy_version",
+          "intended_use",
+          "channel",
+          "audience",
+          "territories"
+        ],
+        "title": "AssessmentContext"
+      },
+      "AssessmentState": {
+        "type": "string",
+        "enum": [
+          "COMPLETE",
+          "PARTIAL",
+          "UNAVAILABLE"
+        ],
+        "title": "AssessmentState"
+      },
+      "AssessmentValidationReceipt": {
+        "properties": {
+          "receipt_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.assessment-validation.v1",
+            "title": "Receipt Schema",
+            "default": "veilgraph.rightsgate.assessment-validation.v1"
+          },
+          "accepted_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.assessment.v1",
+            "title": "Accepted Schema",
+            "default": "veilgraph.rightsgate.assessment.v1"
+          },
+          "assessment_id": {
+            "type": "string",
+            "title": "Assessment Id"
+          },
+          "assessment_sha256": {
+            "type": "string",
+            "title": "Assessment Sha256"
+          },
+          "deployment_decision": {
+            "$ref": "#/components/schemas/DeploymentDecision"
+          },
+          "release_authorization": {
+            "type": "boolean",
+            "const": false,
+            "title": "Release Authorization",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "assessment_id",
+          "assessment_sha256",
+          "deployment_decision"
+        ],
+        "title": "AssessmentValidationReceipt"
+      },
+      "AssetDescriptor": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Asset Id"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256"
+          },
+          "media_kind": {
+            "$ref": "#/components/schemas/MediaKind"
+          },
+          "media_type": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Media Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Size Bytes"
+          },
+          "original_filename": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Original Filename"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "asset_id",
+          "sha256",
+          "media_kind",
+          "media_type",
+          "size_bytes",
+          "original_filename"
+        ],
+        "title": "AssetDescriptor"
+      },
+      "AssetExposureGraph": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.asset-exposure-graph.v1",
+            "title": "Schema",
+            "default": "veilgraph.rightsgate.asset-exposure-graph.v1"
+          },
+          "asset_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Asset Sha256"
+          },
+          "root_node_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Root Node Id"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/ExposureGraphNode"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/ExposureGraphEdge"
+            },
+            "type": "array",
+            "title": "Edges"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "asset_sha256",
+          "root_node_id",
+          "nodes"
+        ],
+        "title": "AssetExposureGraph"
+      },
+      "AssetIR": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.asset-ir.v1",
+            "title": "Schema",
+            "default": "veilgraph.rightsgate.asset-ir.v1"
+          },
+          "asset": {
+            "$ref": "#/components/schemas/AssetDescriptor"
+          },
+          "representations": {
+            "items": {
+              "$ref": "#/components/schemas/AssetRepresentation"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Representations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "asset",
+          "representations"
+        ],
+        "title": "AssetIR"
+      },
+      "AssetRepresentation": {
+        "properties": {
+          "representation_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Representation Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RepresentationKind"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256"
+          },
+          "media_type": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Media Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Size Bytes"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/EvidenceLocator"
+          },
+          "component_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Component Id"
+          },
+          "component_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Component Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "representation_id",
+          "kind",
+          "sha256",
+          "media_type",
+          "size_bytes",
+          "locator"
+        ],
+        "title": "AssetRepresentation"
       },
       "AudienceProfile": {
         "type": "string",
@@ -1717,6 +2157,256 @@
           "signature_valid"
         ],
         "title": "CertificateResponse"
+      },
+      "ClaimDimension": {
+        "type": "string",
+        "enum": [
+          "PROVENANCE",
+          "RIGHTS_EXPOSURE",
+          "DEPLOYMENT_READINESS"
+        ],
+        "title": "ClaimDimension"
+      },
+      "ClaimOutcome": {
+        "type": "string",
+        "enum": [
+          "SUPPORTED",
+          "CONTRADICTED",
+          "UNKNOWN",
+          "NOT_ASSESSED"
+        ],
+        "title": "ClaimOutcome"
+      },
+      "ClaimRecord": {
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Claim Id"
+          },
+          "dimension": {
+            "$ref": "#/components/schemas/ClaimDimension"
+          },
+          "claim_type": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Claim Type"
+          },
+          "statement": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Statement"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/ClaimOutcome"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "title": "Mandatory",
+            "default": true
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "claim_id",
+          "dimension",
+          "claim_type",
+          "statement",
+          "outcome",
+          "confidence"
+        ],
+        "title": "ClaimRecord"
+      },
+      "ComponentRecord": {
+        "properties": {
+          "component_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Component Id"
+          },
+          "component_version": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Component Version"
+          },
+          "component_type": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Component Type"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ComponentState"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "title": "Mandatory",
+            "default": true
+          },
+          "artifact_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Sha256"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "component_id",
+          "component_version",
+          "component_type",
+          "state"
+        ],
+        "title": "ComponentRecord"
+      },
+      "ComponentState": {
+        "type": "string",
+        "enum": [
+          "AVAILABLE",
+          "DEGRADED",
+          "UNAVAILABLE"
+        ],
+        "title": "ComponentState"
+      },
+      "ContractBundleResponse": {
+        "properties": {
+          "bundle_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.contract-bundle.v1",
+            "title": "Bundle Schema",
+            "default": "veilgraph.rightsgate.contract-bundle.v1"
+          },
+          "contract_status": {
+            "type": "string",
+            "const": "IMPLEMENTED",
+            "title": "Contract Status",
+            "default": "IMPLEMENTED"
+          },
+          "detector_status": {
+            "type": "string",
+            "const": "NOT_INCLUDED",
+            "title": "Detector Status",
+            "default": "NOT_INCLUDED"
+          },
+          "schemas": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Schemas"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schemas"
+        ],
+        "title": "ContractBundleResponse"
+      },
+      "DeploymentAssessment": {
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "const": "DEPLOYMENT_READINESS",
+            "title": "Dimension",
+            "default": "DEPLOYMENT_READINESS"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AssessmentState"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/DeploymentDecision"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimRecord"
+            },
+            "type": "array",
+            "title": "Claims"
+          },
+          "policy_citations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Policy Citations"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "decision",
+          "confidence",
+          "policy_citations"
+        ],
+        "title": "DeploymentAssessment"
+      },
+      "DeploymentDecision": {
+        "type": "string",
+        "enum": [
+          "GO",
+          "REVIEW",
+          "BLOCK"
+        ],
+        "title": "DeploymentDecision"
       },
       "DestructionReceiptPayloadResponse": {
         "properties": {
@@ -2055,6 +2745,384 @@
         ],
         "title": "EntityWithMentions"
       },
+      "EvidenceKind": {
+        "type": "string",
+        "enum": [
+          "CONTENT_CREDENTIAL",
+          "METADATA",
+          "WATERMARK",
+          "FORENSIC_SIGNAL",
+          "REFERENCE_MATCH",
+          "LICENCE_RECORD",
+          "CONSENT_RECORD",
+          "POLICY_RULE",
+          "HUMAN_REVIEW",
+          "COMPONENT_FAILURE"
+        ],
+        "title": "EvidenceKind"
+      },
+      "EvidenceLocator": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/LocatorKind"
+          },
+          "page_index": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Index"
+          },
+          "frame_index": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Index"
+          },
+          "bbox": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox"
+          },
+          "start_seconds": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Seconds"
+          },
+          "end_seconds": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Seconds"
+          },
+          "text_start": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Start"
+          },
+          "text_end": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text End"
+          },
+          "metadata_path": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata Path"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "EvidenceLocator"
+      },
+      "EvidencePointer": {
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Evidence Id"
+          },
+          "asset_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Asset Sha256"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EvidenceKind"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Source"
+          },
+          "component_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Component Id"
+          },
+          "component_version": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Component Version"
+          },
+          "polarity": {
+            "$ref": "#/components/schemas/EvidencePolarity",
+            "default": "NEUTRAL"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/EvidenceLocator"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "payload_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload Sha256"
+          },
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Attributes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "asset_sha256",
+          "kind",
+          "source",
+          "component_id",
+          "component_version",
+          "confidence",
+          "locator",
+          "summary"
+        ],
+        "title": "EvidencePointer"
+      },
+      "EvidencePolarity": {
+        "type": "string",
+        "enum": [
+          "SUPPORTS",
+          "CONTRADICTS",
+          "NEUTRAL"
+        ],
+        "title": "EvidencePolarity"
+      },
+      "ExposureGraphEdge": {
+        "properties": {
+          "edge_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Edge Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/GraphEdgeKind"
+          },
+          "source_node_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Source Node Id"
+          },
+          "target_node_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Target Node Id"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Evidence Ids"
+          },
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Attributes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "edge_id",
+          "kind",
+          "source_node_id",
+          "target_node_id",
+          "confidence",
+          "evidence_ids"
+        ],
+        "title": "ExposureGraphEdge"
+      },
+      "ExposureGraphNode": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Node Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/GraphNodeKind-Input"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Attributes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "node_id",
+          "kind",
+          "label"
+        ],
+        "title": "ExposureGraphNode"
+      },
       "ExposureGraphResponse": {
         "properties": {
           "job_id": {
@@ -2180,6 +3248,21 @@
         ],
         "title": "FileType"
       },
+      "GraphEdgeKind": {
+        "type": "string",
+        "enum": [
+          "DERIVED_FROM",
+          "CANDIDATE_MATCH",
+          "DEPICTS",
+          "CONTAINS_VOICE",
+          "CONTAINS_MARK",
+          "COVERED_BY",
+          "CONSENTED_BY",
+          "VALID_IN",
+          "USED_BY"
+        ],
+        "title": "GraphEdgeKind"
+      },
       "GraphEdgeResponse": {
         "properties": {
           "id": {
@@ -2228,7 +3311,23 @@
         ],
         "title": "GraphEdgeType"
       },
-      "GraphNodeKind": {
+      "GraphNodeKind-Input": {
+        "type": "string",
+        "enum": [
+          "ASSET",
+          "WORK",
+          "MARK",
+          "PERSON",
+          "VOICE",
+          "LICENCE",
+          "CONSENT",
+          "TRANSFORMATION",
+          "TERRITORY",
+          "CAMPAIGN"
+        ],
+        "title": "GraphNodeKind"
+      },
+      "GraphNodeKind-Output": {
         "type": "string",
         "enum": [
           "DOCUMENT",
@@ -2247,7 +3346,7 @@
             "title": "Id"
           },
           "kind": {
-            "$ref": "#/components/schemas/GraphNodeKind"
+            "$ref": "#/components/schemas/GraphNodeKind-Output"
           },
           "label": {
             "type": "string",
@@ -2432,6 +3531,27 @@
           "FAILED"
         ],
         "title": "JobStatus"
+      },
+      "LocatorKind": {
+        "type": "string",
+        "enum": [
+          "WHOLE_ASSET",
+          "REGION",
+          "TIME_RANGE",
+          "TEXT_RANGE",
+          "METADATA_PATH"
+        ],
+        "title": "LocatorKind"
+      },
+      "MediaKind": {
+        "type": "string",
+        "enum": [
+          "IMAGE",
+          "VIDEO",
+          "AUDIO",
+          "DOCUMENT"
+        ],
+        "title": "MediaKind"
       },
       "OfflineStatusResponse": {
         "properties": {
@@ -2706,6 +3826,109 @@
         ],
         "title": "PrivacyRecommendationResponse"
       },
+      "ProvenanceAssessment": {
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "const": "PROVENANCE",
+            "title": "Dimension",
+            "default": "PROVENANCE"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AssessmentState"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/ProvenanceVerdict"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimRecord"
+            },
+            "type": "array",
+            "title": "Claims"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "verdict",
+          "confidence"
+        ],
+        "title": "ProvenanceAssessment"
+      },
+      "ProvenanceVerdict": {
+        "type": "string",
+        "enum": [
+          "AUTHENTIC",
+          "AI_GENERATED",
+          "PARTIALLY_GENERATED",
+          "TAMPERED",
+          "UNKNOWN"
+        ],
+        "title": "ProvenanceVerdict"
+      },
+      "RepresentationKind": {
+        "type": "string",
+        "enum": [
+          "ORIGINAL",
+          "VISUAL_FRAME",
+          "AUDIO_TRACK",
+          "TEXT_TRACK",
+          "THUMBNAIL"
+        ],
+        "title": "RepresentationKind"
+      },
+      "RequestValidationReceipt": {
+        "properties": {
+          "receipt_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.request-validation.v1",
+            "title": "Receipt Schema",
+            "default": "veilgraph.rightsgate.request-validation.v1"
+          },
+          "accepted_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.assessment-request.v1",
+            "title": "Accepted Schema",
+            "default": "veilgraph.rightsgate.assessment-request.v1"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "title": "Idempotency Key"
+          },
+          "request_sha256": {
+            "type": "string",
+            "title": "Request Sha256"
+          },
+          "assessment_started": {
+            "type": "boolean",
+            "const": false,
+            "title": "Assessment Started",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "idempotency_key",
+          "request_sha256"
+        ],
+        "title": "RequestValidationReceipt"
+      },
       "ReviewRequest": {
         "properties": {
           "action": {
@@ -2753,6 +3976,168 @@
           "IGNORE"
         ],
         "title": "ReviewStatus"
+      },
+      "RightsAssessment": {
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "const": "RIGHTS_EXPOSURE",
+            "title": "Dimension",
+            "default": "RIGHTS_EXPOSURE"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AssessmentState"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/RightsVerdict"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimRecord"
+            },
+            "type": "array",
+            "title": "Claims"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "verdict",
+          "confidence"
+        ],
+        "title": "RightsAssessment"
+      },
+      "RightsGateAssessment": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.assessment.v1",
+            "title": "Schema",
+            "default": "veilgraph.rightsgate.assessment.v1"
+          },
+          "assessment_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Assessment Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "asset": {
+            "$ref": "#/components/schemas/AssetDescriptor"
+          },
+          "context": {
+            "$ref": "#/components/schemas/AssessmentContext"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentRecord"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Components"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidencePointer"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "exposure_graph": {
+            "$ref": "#/components/schemas/AssetExposureGraph"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceAssessment"
+          },
+          "rights": {
+            "$ref": "#/components/schemas/RightsAssessment"
+          },
+          "deployment": {
+            "$ref": "#/components/schemas/DeploymentAssessment"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "assessment_id",
+          "created_at",
+          "asset",
+          "context",
+          "components",
+          "exposure_graph",
+          "provenance",
+          "rights",
+          "deployment"
+        ],
+        "title": "RightsGateAssessment"
+      },
+      "RightsGateAssessmentRequest": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.assessment-request.v1",
+            "title": "Schema",
+            "default": "veilgraph.rightsgate.assessment-request.v1"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Idempotency Key"
+          },
+          "asset_ir": {
+            "$ref": "#/components/schemas/AssetIR"
+          },
+          "context": {
+            "$ref": "#/components/schemas/AssessmentContext"
+          },
+          "requested_dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimDimension"
+            },
+            "type": "array",
+            "title": "Requested Dimensions",
+            "default": [
+              "PROVENANCE",
+              "RIGHTS_EXPOSURE",
+              "DEPLOYMENT_READINESS"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "idempotency_key",
+          "asset_ir",
+          "context"
+        ],
+        "title": "RightsGateAssessmentRequest"
+      },
+      "RightsVerdict": {
+        "type": "string",
+        "enum": [
+          "CLEAR",
+          "POTENTIAL_EXPOSURE",
+          "POLICY_CONFLICT",
+          "UNKNOWN"
+        ],
+        "title": "RightsVerdict"
       },
       "RiskBreakdownResponse": {
         "properties": {

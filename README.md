@@ -2,9 +2,11 @@
 
 **Evidence-first trust gateway for AI-generated and AI-assisted media.**
 
+[![CI](https://github.com/amogh-hub/VeilGraph-RightsGate/actions/workflows/ci.yml/badge.svg)](https://github.com/amogh-hub/VeilGraph-RightsGate/actions/workflows/ci.yml)
+
 VeilGraph RightsGate is a challenge-focused product line derived from the frozen [VeilGraph](https://github.com/amogh-hub/VeilGraph) privacy-engineering system. The source repository remains unchanged. This repository targets the TECHgium challenge **“Safeguarding Content Rights in the Age of AI-Generated Media.”**
 
-**Status:** `FOUNDATION IMPORTED` · `CHALLENGE CONTRACT DEFINED` · `RIGHTS MODULES NOT YET IMPLEMENTED`
+**Status:** `FOUNDATION VALIDATED` · `DOMAIN CONTRACT IMPLEMENTED` · `RIGHTS DETECTORS PLANNED`
 
 ![VeilGraph RightsGate architecture](docs/architecture/rightsgate-architecture.svg)
 
@@ -20,6 +22,8 @@ The inherited VeilGraph foundation already provides:
 - cryptographically bound audit evidence and signed proof packages.
 
 Those capabilities are inherited engineering assets, not evidence that the new challenge is already solved. AI-generation detection, provenance verification and rights-matching modules are explicitly planned work until their implementation and benchmark evidence land in this repository.
+
+The implemented RightsGate boundary now includes strict, versioned `AssetIR`, assessment-request, evidence/claim, Asset Exposure Graph and three-dimension result schemas. Referential integrity, explicit abstention and fail-closed release invariants have automated tests. No challenge-specific detector is represented as implemented or validated yet.
 
 ## Product contract
 
@@ -109,10 +113,23 @@ npm run typecheck
 npm run build
 ```
 
+## Gate 1 contract API
+
+The current API exposes schemas and validation/fingerprinting boundaries without pretending to run unfinished detectors:
+
+```text
+GET  /api/v1/rightsgate/contracts
+POST /api/v1/rightsgate/requests/validate
+POST /api/v1/rightsgate/assessments/validate
+```
+
+Request validation is content-addressed: identical assessment inputs produce the same SHA-256 fingerprint regardless of the caller's idempotency key. Assessment validation enforces evidence, graph and `GO` invariants but deliberately returns `release_authorization: false`; only a later, trusted orchestration and policy boundary may authorize publication.
+
 ## Repository map
 
 ```text
 backend/                    FastAPI engine, graph, policy, verification and proof
+backend/app/rightsgate/     Versioned RightsGate contracts and validation API
 frontend/                   React/Vite review and release interface
 competition/techgium10/     Competition-specific narrative and evidence
 docs/adr/                   Architecture decisions

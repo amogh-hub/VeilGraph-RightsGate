@@ -19,6 +19,8 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 0 — Isolate and reproduce the foundation
 
+**Status:** COMPLETE — source push guard, baseline tags and local/GitHub CI evidence recorded.
+
 - Preserve source history and prevent writes to the frozen VeilGraph repository.
 - Reproduce backend tests, frontend typecheck and production build.
 - Record toolchain versions and create the baseline tag.
@@ -26,6 +28,8 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 **Exit:** clean reproducible baseline and zero changes to the source repository.
 
 ### Gate 1 — Contract the domain before adding models
+
+**Status:** IN PROGRESS — versioned domain schemas, graph topology, deterministic fingerprints, public validation endpoints and contract tests are implemented. Durable idempotency storage and the trusted execution endpoint remain before exit.
 
 - Define `AssetIR`, `ClaimRecord`, `EvidencePointer`, `DimensionAssessment` and `AssetExposureGraph` schemas.
 - Define an idempotent assessment API and versioned result format.

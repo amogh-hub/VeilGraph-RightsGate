@@ -15,6 +15,12 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 
 | ID | Challenge requirement | Current status | Planned acceptance evidence |
 |---|---|---|---|
+| CONTRACT-01 | Versioned three-dimension assessment result | IMPLEMENTED | `backend/app/rightsgate/contracts.py`; strict schema and serialization tests |
+| CONTRACT-02 | Evidence bound to exact asset, component and claim | IMPLEMENTED | Referential-integrity, version-binding and commitment tests |
+| CONTRACT-03 | Explicit abstention and component-failure semantics | IMPLEMENTED | `UNKNOWN`/`NOT_ASSESSED` limitation and fail-closed tests |
+| CONTRACT-04 | Asset Exposure Graph schema and topology validation | IMPLEMENTED | Node/edge identity, topology and evidence-reference tests |
+| API-01 | Idempotent request contract | IMPLEMENTED | Canonical request fingerprint and deterministic HTTP validation tests |
+| API-02 | Durable idempotent assessment execution | PLANNED | Persistent key/fingerprint conflict tests, replay tests and detector orchestration |
 | ING-01 | Process images | INHERITED | Corpus ingestion and parser-safety tests |
 | ING-02 | Process video | INHERITED | Full-timeline and audio-track tests |
 | ING-03 | Process standalone audio | PLANNED | Decoder, canonicalization and malformed-file tests |

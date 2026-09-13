@@ -15,6 +15,7 @@ from app.core.database import db
 from app.ops.admission import AdmissionController, AdmissionRejected, is_heavy_request
 from app.ops.metrics import runtime_metrics
 from app.ops.routes import bind_admission_snapshot, router as ops_router
+from app.rightsgate.api import router as rightsgate_router
 from app.security.deployment import authorize_request, validate_online_configuration
 from app.security.network_guard import install_egress_guard
 from app.security.retention import (
@@ -66,12 +67,12 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="VeilGraph",
+    title="VeilGraph RightsGate",
     version=settings.version,
     description=(
-        "Local-first privacy compiler with Identity Exposure Graph, L1–L5 transformations, "
-        "fail-closed adversarial verification, cryptographic retention expiry, signed proof "
-        "packages and Phase-2 production/security/scale controls."
+        "Evidence-first pre-publication media trust gateway derived from VeilGraph. "
+        "The current API exposes the inherited privacy foundation and versioned RightsGate "
+        "contracts; challenge-specific detector availability is declared separately."
     ),
     lifespan=lifespan,
 )
@@ -147,3 +148,4 @@ async def production_boundary_metrics_and_headers(request: Request, call_next):
 
 app.include_router(router)
 app.include_router(ops_router)
+app.include_router(rightsgate_router)

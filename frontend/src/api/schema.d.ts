@@ -41,6 +41,57 @@ export interface components {
       "video_units"?: Array<components['schemas']['VideoEvidenceUnitResponse']>
       "status": components['schemas']['JobStatus']
     }
+    "AssessmentContext": {
+      "policy_id": string
+      "policy_version": string
+      "intended_use": string
+      "channel": string
+      "audience": string
+      "territories": Array<string>
+      "brand_profile"?: string | null
+    }
+    "AssessmentState": "COMPLETE" | "PARTIAL" | "UNAVAILABLE"
+    "AssessmentValidationReceipt": {
+      "receipt_schema"?: string
+      "accepted_schema"?: string
+      "assessment_id": string
+      "assessment_sha256": string
+      "deployment_decision": components['schemas']['DeploymentDecision']
+      "release_authorization"?: boolean
+    }
+    "AssetDescriptor": {
+      "asset_id": string
+      "sha256": string
+      "media_kind": components['schemas']['MediaKind']
+      "media_type": string
+      "size_bytes": number
+      "original_filename": string
+      "duration_seconds"?: number | null
+      "width"?: number | null
+      "height"?: number | null
+    }
+    "AssetExposureGraph": {
+      "schema"?: string
+      "asset_sha256": string
+      "root_node_id": string
+      "nodes": Array<components['schemas']['ExposureGraphNode']>
+      "edges"?: Array<components['schemas']['ExposureGraphEdge']>
+    }
+    "AssetIR": {
+      "schema"?: string
+      "asset": components['schemas']['AssetDescriptor']
+      "representations": Array<components['schemas']['AssetRepresentation']>
+    }
+    "AssetRepresentation": {
+      "representation_id": string
+      "kind": components['schemas']['RepresentationKind']
+      "sha256": string
+      "media_type": string
+      "size_bytes": number
+      "locator": components['schemas']['EvidenceLocator']
+      "component_id"?: string | null
+      "component_version"?: string | null
+    }
     "AudienceProfile": "PUBLIC_RELEASE" | "RESEARCH_PARTNER" | "INTERNAL_OPERATIONS"
     "AuditEventResponse": {
       "sequence": number
@@ -105,6 +156,45 @@ export interface components {
       "signature_b64": string
       "signature_valid": boolean
     }
+    "ClaimDimension": "PROVENANCE" | "RIGHTS_EXPOSURE" | "DEPLOYMENT_READINESS"
+    "ClaimOutcome": "SUPPORTED" | "CONTRADICTED" | "UNKNOWN" | "NOT_ASSESSED"
+    "ClaimRecord": {
+      "claim_id": string
+      "dimension": components['schemas']['ClaimDimension']
+      "claim_type": string
+      "statement": string
+      "outcome": components['schemas']['ClaimOutcome']
+      "confidence": number
+      "mandatory"?: boolean
+      "evidence_ids"?: Array<string>
+      "limitations"?: Array<string>
+    }
+    "ComponentRecord": {
+      "component_id": string
+      "component_version": string
+      "component_type": string
+      "state": components['schemas']['ComponentState']
+      "mandatory"?: boolean
+      "artifact_sha256"?: string | null
+      "reason"?: string | null
+    }
+    "ComponentState": "AVAILABLE" | "DEGRADED" | "UNAVAILABLE"
+    "ContractBundleResponse": {
+      "bundle_schema"?: string
+      "contract_status"?: string
+      "detector_status"?: string
+      "schemas": Record<string, Record<string, unknown>>
+    }
+    "DeploymentAssessment": {
+      "dimension"?: string
+      "state": components['schemas']['AssessmentState']
+      "decision": components['schemas']['DeploymentDecision']
+      "confidence": number
+      "claims"?: Array<components['schemas']['ClaimRecord']>
+      "policy_citations": Array<string>
+      "limitations"?: Array<string>
+    }
+    "DeploymentDecision": "GO" | "REVIEW" | "BLOCK"
     "DestructionReceiptPayloadResponse": {
       "schema": string
       "product": string
@@ -167,6 +257,49 @@ export interface components {
       "entity": components['schemas']['CanonicalEntityResponse']
       "mentions": Array<components['schemas']['EntityMentionResponse']>
     }
+    "EvidenceKind": "CONTENT_CREDENTIAL" | "METADATA" | "WATERMARK" | "FORENSIC_SIGNAL" | "REFERENCE_MATCH" | "LICENCE_RECORD" | "CONSENT_RECORD" | "POLICY_RULE" | "HUMAN_REVIEW" | "COMPONENT_FAILURE"
+    "EvidenceLocator": {
+      "kind": components['schemas']['LocatorKind']
+      "page_index"?: number | null
+      "frame_index"?: number | null
+      "bbox"?: Array<unknown> | null
+      "start_seconds"?: number | null
+      "end_seconds"?: number | null
+      "text_start"?: number | null
+      "text_end"?: number | null
+      "metadata_path"?: string | null
+    }
+    "EvidencePointer": {
+      "evidence_id": string
+      "asset_sha256": string
+      "kind": components['schemas']['EvidenceKind']
+      "source": string
+      "component_id": string
+      "component_version": string
+      "polarity"?: components['schemas']['EvidencePolarity']
+      "confidence": number
+      "locator": components['schemas']['EvidenceLocator']
+      "summary": string
+      "payload_sha256"?: string | null
+      "attributes"?: Record<string, string | number | number | boolean | null>
+    }
+    "EvidencePolarity": "SUPPORTS" | "CONTRADICTS" | "NEUTRAL"
+    "ExposureGraphEdge": {
+      "edge_id": string
+      "kind": components['schemas']['GraphEdgeKind']
+      "source_node_id": string
+      "target_node_id": string
+      "confidence": number
+      "evidence_ids": Array<string>
+      "attributes"?: Record<string, string | number | number | boolean | null>
+    }
+    "ExposureGraphNode": {
+      "node_id": string
+      "kind": components['schemas']['GraphNodeKind-Input']
+      "label": string
+      "evidence_ids"?: Array<string>
+      "attributes"?: Record<string, string | number | number | boolean | null>
+    }
     "ExposureGraphResponse": {
       "job_id": string
       "file_id": string
@@ -190,6 +323,7 @@ export interface components {
       "created_at": string
     }
     "FileType": "PDF" | "IMAGE" | "TEXT" | "DATASET" | "DOCX" | "VIDEO"
+    "GraphEdgeKind": "DERIVED_FROM" | "CANDIDATE_MATCH" | "DEPICTS" | "CONTAINS_VOICE" | "CONTAINS_MARK" | "COVERED_BY" | "CONSENTED_BY" | "VALID_IN" | "USED_BY"
     "GraphEdgeResponse": {
       "id": string
       "source": string
@@ -199,10 +333,11 @@ export interface components {
       "explanation": string
     }
     "GraphEdgeType": "CONTAINS" | "IDENTIFIES" | "DESCRIBES" | "RELATED_TO" | "CO_OCCURS_WITH"
-    "GraphNodeKind": "DOCUMENT" | "SUBJECT" | "RELATED_PERSON" | "DIRECT_IDENTIFIER" | "QUASI_IDENTIFIER" | "VISUAL_IDENTIFIER"
+    "GraphNodeKind-Input": "ASSET" | "WORK" | "MARK" | "PERSON" | "VOICE" | "LICENCE" | "CONSENT" | "TRANSFORMATION" | "TERRITORY" | "CAMPAIGN"
+    "GraphNodeKind-Output": "DOCUMENT" | "SUBJECT" | "RELATED_PERSON" | "DIRECT_IDENTIFIER" | "QUASI_IDENTIFIER" | "VISUAL_IDENTIFIER"
     "GraphNodeResponse": {
       "id": string
-      "kind": components['schemas']['GraphNodeKind']
+      "kind": components['schemas']['GraphNodeKind-Output']
       "label": string
       "entity_id"?: string | null
       "entity_type"?: components['schemas']['EntityType'] | null
@@ -234,6 +369,8 @@ export interface components {
       "updated_at": string
     }
     "JobStatus": "CREATED" | "UPLOADED" | "ANALYSED" | "HUMAN_REVIEW_REQUIRED" | "TRANSFORMED" | "VERIFIED" | "BLOCKED" | "DESTROYED" | "FAILED"
+    "LocatorKind": "WHOLE_ASSET" | "REGION" | "TIME_RANGE" | "TEXT_RANGE" | "METADATA_PATH"
+    "MediaKind": "IMAGE" | "VIDEO" | "AUDIO" | "DOCUMENT"
     "OfflineStatusResponse": {
       "offline_mode": boolean
       "backend_address": string
@@ -283,6 +420,23 @@ export interface components {
       "methodology": string
       "disclaimer": string
     }
+    "ProvenanceAssessment": {
+      "dimension"?: string
+      "state": components['schemas']['AssessmentState']
+      "verdict": components['schemas']['ProvenanceVerdict']
+      "confidence": number
+      "claims"?: Array<components['schemas']['ClaimRecord']>
+      "limitations"?: Array<string>
+    }
+    "ProvenanceVerdict": "AUTHENTIC" | "AI_GENERATED" | "PARTIALLY_GENERATED" | "TAMPERED" | "UNKNOWN"
+    "RepresentationKind": "ORIGINAL" | "VISUAL_FRAME" | "AUDIO_TRACK" | "TEXT_TRACK" | "THUMBNAIL"
+    "RequestValidationReceipt": {
+      "receipt_schema"?: string
+      "accepted_schema"?: string
+      "idempotency_key": string
+      "request_sha256": string
+      "assessment_started"?: boolean
+    }
     "ReviewRequest": {
       "action": components['schemas']['ReviewStatus']
     }
@@ -293,6 +447,35 @@ export interface components {
       "job_status": components['schemas']['JobStatus']
     }
     "ReviewStatus": "NOT_REQUIRED" | "PENDING" | "PROTECT" | "IGNORE"
+    "RightsAssessment": {
+      "dimension"?: string
+      "state": components['schemas']['AssessmentState']
+      "verdict": components['schemas']['RightsVerdict']
+      "confidence": number
+      "claims"?: Array<components['schemas']['ClaimRecord']>
+      "limitations"?: Array<string>
+    }
+    "RightsGateAssessment": {
+      "schema"?: string
+      "assessment_id": string
+      "created_at": string
+      "asset": components['schemas']['AssetDescriptor']
+      "context": components['schemas']['AssessmentContext']
+      "components": Array<components['schemas']['ComponentRecord']>
+      "evidence"?: Array<components['schemas']['EvidencePointer']>
+      "exposure_graph": components['schemas']['AssetExposureGraph']
+      "provenance": components['schemas']['ProvenanceAssessment']
+      "rights": components['schemas']['RightsAssessment']
+      "deployment": components['schemas']['DeploymentAssessment']
+    }
+    "RightsGateAssessmentRequest": {
+      "schema"?: string
+      "idempotency_key": string
+      "asset_ir": components['schemas']['AssetIR']
+      "context": components['schemas']['AssessmentContext']
+      "requested_dimensions"?: Array<components['schemas']['ClaimDimension']>
+    }
+    "RightsVerdict": "CLEAR" | "POTENTIAL_EXPOSURE" | "POLICY_CONFLICT" | "UNKNOWN"
     "RiskBreakdownResponse": {
       "direct": number
       "quasi_identifier": number
