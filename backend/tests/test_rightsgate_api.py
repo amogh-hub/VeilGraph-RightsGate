@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import io
+
 from fastapi.testclient import TestClient
+from PIL import Image
 
 
 def request_payload() -> dict:
@@ -62,6 +65,7 @@ def test_contract_bundle_declares_implemented_contracts_without_detector_claims(
         "veilgraph.rightsgate.assessment-request.v1",
         "veilgraph.rightsgate.asset-exposure-graph.v1",
         "veilgraph.rightsgate.assessment.v1",
+        "veilgraph.rightsgate.rights-reference-registry.v1",
     }
 
 
@@ -92,3 +96,29 @@ def test_openapi_exposes_rightsgate_contract_boundary(client: TestClient) -> Non
     assert "/api/v1/rightsgate/contracts" in document["paths"]
     assert "/api/v1/rightsgate/requests/validate" in document["paths"]
     assert "/api/v1/rightsgate/assessments/validate" in document["paths"]
+    assert "/api/v1/rightsgate/provenance/c2pa" in document["paths"]
+
+
+def test_c2pa_endpoint_inspects_unsigned_image_without_claiming_human_authorship(
+    client: TestClient,
+) -> None:
+    buffer = io.BytesIO()
+    Image.new("RGB", (2, 2), color=(255, 255, 255)).save(buffer, format="PNG")
+
+    response = client.post(
+        "/api/v1/rightsgate/provenance/c2pa",
+        files={"file": ("unsigned.png", buffer.getvalue(), "image/png")},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["component"]["state"] == "AVAILABLE"
+    assert body["assessment"]["verdict"] == "UNKNOWN"
+    assert "not evidence of human authorship" in body["assessment"]["limitations"][0]
+
+
+def test_c2pa_endpoint_rejects_unrecognized_input(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/rightsgate/provenance/c2pa",
+        files={"file": ("asset.bin", b"not media", "application/octet-stream")},
+    )
+    assert response.status_code == 400

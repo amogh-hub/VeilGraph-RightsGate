@@ -1277,6 +1277,48 @@
           }
         }
       }
+    },
+    "/api/v1/rightsgate/provenance/c2pa": {
+      "post": {
+        "tags": [
+          "RightsGate contracts"
+        ],
+        "summary": "Inspect C2Pa",
+        "description": "Run the bounded offline C2PA adapter without making a release decision.",
+        "operationId": "inspect_c2pa_api_v1_rightsgate_provenance_c2pa_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_inspect_c2pa_api_v1_rightsgate_provenance_c2pa_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/C2PAVerificationResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1935,6 +1977,20 @@
         ],
         "title": "AuditLedgerResponse"
       },
+      "Body_inspect_c2pa_api_v1_rightsgate_provenance_c2pa_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_inspect_c2pa_api_v1_rightsgate_provenance_c2pa_post"
+      },
       "Body_upload_file_api_v1_jobs__job_id__files_post": {
         "properties": {
           "file": {
@@ -1948,6 +2004,31 @@
           "file"
         ],
         "title": "Body_upload_file_api_v1_jobs__job_id__files_post"
+      },
+      "C2PAVerificationResult": {
+        "properties": {
+          "component": {
+            "$ref": "#/components/schemas/ComponentRecord"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidencePointer"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "assessment": {
+            "$ref": "#/components/schemas/ProvenanceAssessment"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "component",
+          "evidence",
+          "assessment"
+        ],
+        "title": "C2PAVerificationResult"
       },
       "CanonicalEntityResponse": {
         "properties": {

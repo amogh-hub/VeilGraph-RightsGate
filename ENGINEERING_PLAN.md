@@ -53,6 +53,8 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 3 — Build the rights lane
 
+**Status:** IN PROGRESS — a versioned local image-reference registry plus byte-exact and perceptual candidate retrieval are implemented with safety, transformation and no-match semantics tests. Licence, consent, territory, likeness, voice, localization and benchmark work remains before exit.
+
 - Create a governed reference registry with works, logos, licences, consent and territory.
 - Add perceptual and embedding-based candidate retrieval for image, video and audio.
 - Add trademark/logo detection and policy-aware licence evaluation.

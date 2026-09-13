@@ -8,8 +8,16 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, File, HTTPException, UploadFile
 
+from app.core.config import settings
+from app.ingestion.validator import (
+    ValidationError as UploadValidationError,
+    sanitize_filename,
+    validate_upload,
+)
+
+from .provenance import C2PAVerificationResult, verify_c2pa
 from .contracts import (
     ASSESSMENT_REQUEST_SCHEMA,
     ASSESSMENT_SCHEMA,
@@ -22,6 +30,8 @@ from .contracts import (
     RightsGateAssessmentRequest,
     StrictFrozenModel,
 )
+from .rights import RightsReferenceRegistry
+from .rights.image_registry import REGISTRY_SCHEMA
 
 router = APIRouter(prefix="/api/v1/rightsgate", tags=["RightsGate contracts"])
 
@@ -66,6 +76,7 @@ def get_contracts() -> ContractBundleResponse:
             ASSESSMENT_REQUEST_SCHEMA: RightsGateAssessmentRequest.model_json_schema(by_alias=True),
             EXPOSURE_GRAPH_SCHEMA: AssetExposureGraph.model_json_schema(by_alias=True),
             ASSESSMENT_SCHEMA: RightsGateAssessment.model_json_schema(by_alias=True),
+            REGISTRY_SCHEMA: RightsReferenceRegistry.model_json_schema(by_alias=True),
         }
     )
 
@@ -89,3 +100,19 @@ def validate_assessment(payload: RightsGateAssessment) -> AssessmentValidationRe
         assessment_sha256=payload.commitment_sha256(),
         deployment_decision=payload.deployment.decision,
     )
+
+
+@router.post("/provenance/c2pa", response_model=C2PAVerificationResult)
+async def inspect_c2pa(file: UploadFile = File(...)) -> C2PAVerificationResult:
+    """Run the bounded offline C2PA adapter without making a release decision."""
+
+    try:
+        data = await file.read(settings.max_file_size_bytes + 1)
+    finally:
+        await file.close()
+    filename = sanitize_filename(file.filename or "asset")
+    try:
+        _, media_type, asset_sha256 = validate_upload(data, filename)
+    except UploadValidationError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return verify_c2pa(data, media_type, asset_sha256)

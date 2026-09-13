@@ -109,8 +109,16 @@ export interface components {
       "error"?: string | null
       "events": Array<components['schemas']['AuditEventResponse']>
     }
+    "Body_inspect_c2pa_api_v1_rightsgate_provenance_c2pa_post": {
+      "file": string
+    }
     "Body_upload_file_api_v1_jobs__job_id__files_post": {
       "file": string
+    }
+    "C2PAVerificationResult": {
+      "component": components['schemas']['ComponentRecord']
+      "evidence": Array<components['schemas']['EvidencePointer']>
+      "assessment": components['schemas']['ProvenanceAssessment']
     }
     "CanonicalEntityResponse": {
       "id": string

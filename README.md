@@ -6,7 +6,7 @@
 
 VeilGraph RightsGate is a challenge-focused product line derived from the frozen [VeilGraph](https://github.com/amogh-hub/VeilGraph) privacy-engineering system. The source repository remains unchanged. This repository targets the TECHgium challenge **“Safeguarding Content Rights in the Age of AI-Generated Media.”**
 
-**Status:** `FOUNDATION VALIDATED` · `DOMAIN CONTRACT IMPLEMENTED` · `C2PA ADAPTER IMPLEMENTED` · `RIGHTS DETECTORS PLANNED`
+**Status:** `FOUNDATION VALIDATED` · `DOMAIN CONTRACT IMPLEMENTED` · `C2PA ADAPTER IMPLEMENTED` · `RIGHTS RETRIEVAL IMPLEMENTED` · `LICENCE/POLICY MODULES PLANNED`
 
 ![VeilGraph RightsGate architecture](docs/architecture/rightsgate-architecture.svg)
 
@@ -26,6 +26,8 @@ Those capabilities are inherited engineering assets, not evidence that the new c
 The implemented RightsGate boundary now includes strict, versioned `AssetIR`, assessment-request, evidence/claim, Asset Exposure Graph and three-dimension result schemas. Referential integrity, explicit abstention and fail-closed release invariants have automated tests.
 
 The first provenance adapter uses the official CAI `c2pa-python` SDK in local-only mode. It reads and validates embedded Content Credentials, recognizes the IPTC declarations for AI-generated and AI-edited media, retains validation-status evidence, and distinguishes cryptographic mismatches from an untrusted signer. It is `IMPLEMENTED`, not yet `VALIDATED`: signed, tampered and transformed frozen fixture evaluation remains required before competition metrics are claimed.
+
+The first rights adapter provides exact-byte and perceptual-image candidate retrieval against a versioned, content-addressed local registry. It applies EXIF orientation, enforces a pixel budget, fails closed on unsafe inputs and deliberately returns `UNKNOWN`—not “clear”—when no registered candidate is found. Similarity produces `POTENTIAL_EXPOSURE`, never a legal infringement conclusion. This adapter is also `IMPLEMENTED`, not benchmark-`VALIDATED`.
 
 ## Product contract
 
@@ -123,9 +125,10 @@ The current API exposes schemas and validation/fingerprinting boundaries without
 GET  /api/v1/rightsgate/contracts
 POST /api/v1/rightsgate/requests/validate
 POST /api/v1/rightsgate/assessments/validate
+POST /api/v1/rightsgate/provenance/c2pa
 ```
 
-Request validation is content-addressed: identical assessment inputs produce the same SHA-256 fingerprint regardless of the caller's idempotency key. Assessment validation enforces evidence, graph and `GO` invariants but deliberately returns `release_authorization: false`; only a later, trusted orchestration and policy boundary may authorize publication.
+Request validation is content-addressed: identical assessment inputs produce the same SHA-256 fingerprint regardless of the caller's idempotency key. Assessment validation enforces evidence, graph and `GO` invariants but deliberately returns `release_authorization: false`; only a later, trusted orchestration and policy boundary may authorize publication. The C2PA endpoint runs the implemented local credential adapter and returns a provenance fragment, never a release decision.
 
 ## Repository map
 
@@ -133,6 +136,7 @@ Request validation is content-addressed: identical assessment inputs produce the
 backend/                    FastAPI engine, graph, policy, verification and proof
 backend/app/rightsgate/     Versioned RightsGate contracts and validation API
 backend/app/rightsgate/provenance/  Offline provenance adapters
+backend/app/rightsgate/rights/      Governed local rights-reference adapters
 frontend/                   React/Vite review and release interface
 competition/techgium10/     Competition-specific narrative and evidence
 docs/adr/                   Architecture decisions

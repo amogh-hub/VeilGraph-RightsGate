@@ -28,7 +28,7 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | PROV-02 | Assess wholly AI-generated media | PLANNED | Frozen multi-generator test split with calibration and FPR |
 | PROV-03 | Assess partial generation or manipulation | PLANNED | Splice/inpaint/localization fixtures with region/timeline scoring |
 | PROV-04 | Detect provenance metadata or watermark tampering | PLANNED | Removal, forgery, collision and transformation attack matrix |
-| RIGHTS-01 | Identify copyrighted-work exposure | PLANNED | Governed reference registry and transformed-match benchmark |
+| RIGHTS-01 | Identify copyrighted-work exposure | IMPLEMENTED | Versioned byte-bound registry and exact/perceptual image candidate tests; transformed-match frozen benchmark remains for `VALIDATED` |
 | RIGHTS-02 | Identify trademark/logo exposure | PLANNED | Positive, hard-negative and obscured-mark benchmark |
 | RIGHTS-03 | Evaluate licence constraints | PLANNED | Intended-use, territory, expiry and conflict test cases |
 | RIGHTS-04 | Identify likeness exposure | PLANNED | Consented local gallery with threshold/FAR evidence |
