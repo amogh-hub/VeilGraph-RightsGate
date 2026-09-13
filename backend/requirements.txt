@@ -4,7 +4,7 @@ uvicorn[standard]==0.40.0
 pydantic==2.13.4
 pydantic-settings==2.15.0
 python-multipart==0.0.32
-PyMuPDF==1.26.7
+PyMuPDF==1.28.2
 Pillow==12.3.0
 pytesseract==0.3.13
 opencv-python-headless==4.13.0.92
