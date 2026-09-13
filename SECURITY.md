@@ -1,8 +1,12 @@
-# VeilGraph Security
+# Security Policy
+
+## Supported versions
+
+Until the first tagged RightsGate release, only the latest commit on `main` is supported. The imported VeilGraph baseline tag exists for provenance and is not a maintained dependency line.
 
 ## Security posture
 
-VeilGraph is designed for sensitive privacy transformation where uncertainty should block release rather than be silently ignored. The core security policy is **fail closed**.
+RightsGate inherits VeilGraph's design for sensitive privacy transformation, where uncertainty blocks release rather than being silently ignored. The core security policy is **fail closed**.
 
 ## Operational boundary
 
@@ -26,7 +30,7 @@ The COTS benchmark tooling is an explicitly separate evaluation path and may con
 - `0700` workspace directory / `0600` blob permissions where the host supports them;
 - HMAC-SHA256 for normalized entity fingerprints.
 
-Plaintext identity values may exist in process memory while a job is active. VeilGraph does not claim that a compromised OS can be prevented from reading process memory.
+Plaintext identity values may exist in process memory while a job is active. RightsGate does not claim that a compromised OS can be prevented from reading process memory.
 
 ## Signing and integrity
 
@@ -50,28 +54,33 @@ Secure-online mode requires:
 
 The bundled acceptance uses a real local TLS socket. Production internet exposure still requires organization-managed DNS/TLS, reverse proxy/firewall and normal infrastructure security controls.
 
-## Resource / archive hardening
+## Resource and archive hardening
 
-The application enforces bounded file/PDF/image/video/proof-package limits. Proof/release packages reject unsafe member paths and unmanifested entries.
+The application enforces bounded file/PDF/image/video/proof-package limits. Proof and release packages reject unsafe member paths and unmanifested entries.
 
 ## Public repository hygiene
 
-The GitHub-oriented release excludes:
-
-- private signing keys;
-- runtime databases/workspaces/uploads;
-- `.env`/credential material;
-- Python/COTS virtual environments;
-- `node_modules` and caches;
-- raw machine-local regression logs;
-- generated large competition archives.
-
-See [PUBLIC_RELEASE.md](PUBLIC_RELEASE.md).
+The public release excludes private signing keys, runtime databases/workspaces/uploads, environment and credential material, virtual environments, `node_modules`, caches, raw machine-local regression logs and generated competition archives. See [PUBLIC_RELEASE.md](PUBLIC_RELEASE.md).
 
 ## Reporting a vulnerability
 
-Do **not** publish a sensitive exploit, credential, private dataset sample or real PII in a public issue. Use a private GitHub Security Advisory if the repository enables it, or contact the project team through the private SIH coordination channel.
+Do not disclose suspected vulnerabilities, private media, credentials or personal data in a public issue. Use the repository's **Security → Report a vulnerability** flow to open a private GitHub security advisory. Include the affected commit, reproduction steps, impact and the smallest safe proof of concept.
+
+If private reporting is unavailable, open a public issue containing no exploit or sensitive details and request a private contact channel.
+
+## Response targets
+
+- acknowledge a complete report within 72 hours;
+- triage severity and affected scope within 7 days;
+- publish a fix or mitigation timeline after validation;
+- credit the reporter unless anonymity is requested.
+
+These are project targets, not a service-level guarantee.
+
+## Data handling
+
+Never attach real confidential media, secrets or biometric references to a report. Use synthetic fixtures and hashes wherever possible. Likeness and voice references are expected to remain in a consented local registry outside Git.
 
 ## Claims boundary
 
-VeilGraph security evidence is bounded to the implementation, threat model and tested environments. It is not a substitute for host hardening, organizational access control, independent penetration testing or formal certification in a production government deployment.
+RightsGate security evidence is bounded to the implementation, threat model and tested environments. It is not a substitute for host hardening, organizational access control, independent penetration testing or formal certification.
