@@ -142,6 +142,32 @@ class Database:
                     receipt_sha256 TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS rightsgate_assessments (
+                    idempotency_key TEXT PRIMARY KEY,
+                    request_sha256 TEXT NOT NULL,
+                    execution_sha256 TEXT NOT NULL,
+                    status TEXT NOT NULL CHECK(status IN ('PENDING', 'COMPLETE', 'FAILED')),
+                    attempt_count INTEGER NOT NULL DEFAULT 1 CHECK(attempt_count > 0),
+                    lease_expires_at TEXT NOT NULL,
+                    request_json TEXT NOT NULL,
+                    assessment_id TEXT UNIQUE,
+                    assessment_json TEXT,
+                    assessment_sha256 TEXT,
+                    failure_code TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    CHECK(
+                        (status = 'COMPLETE' AND assessment_id IS NOT NULL
+                         AND assessment_json IS NOT NULL AND assessment_sha256 IS NOT NULL
+                         AND failure_code IS NULL)
+                        OR status = 'PENDING'
+                        OR (status = 'FAILED' AND failure_code IS NOT NULL)
+                    )
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_rightsgate_assessment_id
+                    ON rightsgate_assessments(assessment_id);
                 """
             )
             # Safe in-place migration for users who point Slice C at a prior database.

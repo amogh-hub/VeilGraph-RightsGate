@@ -67,6 +67,8 @@ def test_exact_reference_match_returns_potential_exposure() -> None:
     assert result.assessment.verdict == RightsVerdict.POTENTIAL_EXPOSURE
     assert result.assessment.confidence == 1
     assert result.evidence[0].attributes["exact"] is True
+    assert result.evidence[0].attributes["max_hamming_distance"] == 6
+    assert result.evidence[0].attributes["source_record_id"] == "rights-record.work-001"
     assert result.assessment.claims[0].outcome == ClaimOutcome.SUPPORTED
     assert "not a legal determination" in result.assessment.limitations[1]
 

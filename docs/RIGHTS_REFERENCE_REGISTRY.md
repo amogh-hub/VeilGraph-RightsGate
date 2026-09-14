@@ -24,13 +24,19 @@ This is candidate retrieval, not copyright or trademark adjudication.
 
 A perceptual hash is intentionally a transparent baseline, not the final retrieval system. It creates reproducible evidence and a benchmark target for later embedding, crop-resistant and localized detectors.
 
+## Licence evaluation
+
+Retrieved candidates feed a separate, versioned licence registry. Each licence binds governed reference IDs to an explicit status, validity window, territory set, channel set and intended-use set. Evaluation is deterministic at an assessment timestamp. A candidate without complete coverage becomes `POLICY_CONFLICT`; a covered candidate retains its retrieval evidence but does not create global rights clearance because other works, marks, likenesses and voices may remain outside registry coverage.
+
+The integrated workflow derives reference SHA-256 and dHash values server-side through `POST /api/v1/rightsgate/rights/references/image`, preventing the browser from approximating the registered evidence. Raw reference bytes are processed in memory and are not included in the assessment record.
+
 ## Evidence still required for `VALIDATED`
 
 - legally sourced positive references and unrelated hard negatives;
 - crop, resize, recompression, color, overlay and partial-copy transformations;
 - precision/recall, false-positive rate and threshold calibration on a frozen split;
 - logo/mark localization instead of whole-image matching;
-- licence, consent, intended-use, date and territory evaluation;
+- broader licence terms, consent and contractual conflict interpretation beyond the implemented date, state, intended-use, channel and territory checks;
 - consented likeness and voice reference protocols;
 - reviewer-effort and latency measurements.
 

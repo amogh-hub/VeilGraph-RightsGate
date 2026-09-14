@@ -20,8 +20,9 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | CONTRACT-03 | Explicit abstention and component-failure semantics | IMPLEMENTED | `UNKNOWN`/`NOT_ASSESSED` limitation and fail-closed tests |
 | CONTRACT-04 | Asset Exposure Graph schema and topology validation | IMPLEMENTED | Node/edge identity, topology and evidence-reference tests |
 | API-01 | Idempotent request contract | IMPLEMENTED | Canonical request fingerprint and deterministic HTTP validation tests |
-| API-02 | Durable idempotent assessment execution | PLANNED | Persistent key/fingerprint conflict tests, replay tests and detector orchestration |
-| ING-01 | Process images | INHERITED | Corpus ingestion and parser-safety tests |
+| API-02 | Durable idempotent assessment execution | IMPLEMENTED | Atomic SQLite leases, exact replay, conflict, expiry recovery and stored-commitment integrity tests |
+| API-03 | Derive governed image-reference records | IMPLEMENTED | Server-side hash/dHash derivation, upload validation and HTTP tests |
+| ING-01 | Process images | IMPLEMENTED | Exact hash/size/type/dimension binding and parser-safety tests in trusted execution |
 | ING-02 | Process video | INHERITED | Full-timeline and audio-track tests |
 | ING-03 | Process standalone audio | PLANNED | Decoder, canonicalization and malformed-file tests |
 | PROV-01 | Verify content credentials/C2PA | IMPLEMENTED | Official offline SDK adapter and no-manifest/status-mapping tests; signed, mismatched, stripped and replayed fixtures remain for `VALIDATED` |
@@ -30,16 +31,19 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | PROV-04 | Detect provenance metadata or watermark tampering | PLANNED | Removal, forgery, collision and transformation attack matrix |
 | RIGHTS-01 | Identify copyrighted-work exposure | IMPLEMENTED | Versioned byte-bound registry and exact/perceptual image candidate tests; transformed-match frozen benchmark remains for `VALIDATED` |
 | RIGHTS-02 | Identify trademark/logo exposure | PLANNED | Positive, hard-negative and obscured-mark benchmark |
-| RIGHTS-03 | Evaluate licence constraints | PLANNED | Intended-use, territory, expiry and conflict test cases |
+| RIGHTS-03 | Evaluate licence constraints | IMPLEMENTED | Status, intended-use, channel, territory, validity-window, conflict and registry-integrity tests |
 | RIGHTS-04 | Identify likeness exposure | PLANNED | Consented local gallery with threshold/FAR evidence |
 | RIGHTS-05 | Identify voice exposure | PLANNED | Consented local voice set with transformation and FAR evidence |
-| GRAPH-01 | Combine related evidence | INHERITED | Rights-specific graph schema, inference and conflict tests |
-| POLICY-01 | Configurable brand policy | INHERITED | RightsGate rule schema and deterministic policy fixtures |
-| POLICY-02 | Regulatory and regional policy | PLANNED | Territory and policy-version decision table tests |
-| POLICY-03 | Clear `GO`/`REVIEW`/`BLOCK` outcome | INHERITED | Exact challenge outcome mapping and fail-closed tests |
-| EVID-01 | Supporting evidence per dimension | INHERITED | Challenge evidence schema, byte binding and UI inspection |
+| GRAPH-01 | Combine related evidence | IMPLEMENTED | Asset, work/mark, licence, campaign and territory nodes with evidence-bound edge tests |
+| POLICY-01 | Configurable brand/channel/audience policy | IMPLEMENTED | Versioned schema and deterministic mismatch fixtures |
+| POLICY-02 | Regional territory policy | IMPLEMENTED | Territory allow-list and policy-version identity tests |
+| POLICY-03 | Clear `GO`/`REVIEW`/`BLOCK` outcome | IMPLEMENTED | Exact deterministic mapping, missing-component abstention and contract fail-closed tests |
+| POLICY-04 | Regulatory policy packs | PLANNED | Jurisdiction-specific versioned rule packs and decision-table tests |
+| EVID-01 | Supporting evidence per dimension | IMPLEMENTED | Challenge evidence schema, byte binding, graph references and review UI inspection |
 | CONF-01 | Confidence per dimension | PLANNED | Calibration protocol, reliability plots and abstention tests |
-| FLOW-01 | Integrate with an existing content workflow | PLANNED | Idempotent API, webhook and simulated CMS demonstration |
+| FLOW-00 | Integrated RightsGate review UI | IMPLEMENTED | Image/reference intake and three-dimension evidence/decision workflow |
+| FLOW-01 | Integrate with an existing CMS workflow | PLANNED | Authenticated webhook and simulated CMS demonstration |
+| EVAL-00 | Reproducible component sanity evaluation | IMPLEMENTED | Frozen 32-case synthetic rights manifest, byte hashes, exact-only ablation and checked-in bounded results |
 | EVAL-01 | Declare test set | PLANNED | Versioned manifest, licences, hashes and frozen family split |
 | EVAL-02 | State accuracy and false-positive rate | PLANNED | Reproducible per-dimension evaluation report |
 | EVAL-03 | Go beyond standards/watermarking | PLANNED | Baseline and ablation comparison against the full system |

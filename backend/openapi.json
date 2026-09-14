@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "VeilGraph RightsGate",
-    "description": "Evidence-first pre-publication media trust gateway derived from VeilGraph. The current API exposes the inherited privacy foundation and versioned RightsGate contracts; challenge-specific detector availability is declared separately.",
-    "version": "0.6.1-phase2-final-hardening"
+    "description": "Evidence-first pre-publication media trust gateway derived from VeilGraph. The API exposes the inherited privacy foundation plus versioned RightsGate contracts, offline C2PA inspection, governed image retrieval, licence evaluation, deterministic policy and durable non-authorizing image assessments.",
+    "version": "0.2.0-rightsgate-prototype"
   },
   "paths": {
     "/api/v1/status": {
@@ -1175,7 +1175,7 @@
     "/api/v1/rightsgate/contracts": {
       "get": {
         "tags": [
-          "RightsGate contracts"
+          "RightsGate"
         ],
         "summary": "Get Contracts",
         "description": "Return canonical JSON Schemas for the implemented Gate 1 boundary.",
@@ -1197,7 +1197,7 @@
     "/api/v1/rightsgate/requests/validate": {
       "post": {
         "tags": [
-          "RightsGate contracts"
+          "RightsGate"
         ],
         "summary": "Validate Request",
         "description": "Validate and fingerprint an idempotent assessment request envelope.",
@@ -1239,7 +1239,7 @@
     "/api/v1/rightsgate/assessments/validate": {
       "post": {
         "tags": [
-          "RightsGate contracts"
+          "RightsGate"
         ],
         "summary": "Validate Assessment",
         "description": "Validate an externally assembled result without granting release authority.",
@@ -1248,7 +1248,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RightsGateAssessment"
+                "$ref": "#/components/schemas/RightsGateAssessment-Input"
               }
             }
           },
@@ -1281,7 +1281,7 @@
     "/api/v1/rightsgate/provenance/c2pa": {
       "post": {
         "tags": [
-          "RightsGate contracts"
+          "RightsGate"
         ],
         "summary": "Inspect C2Pa",
         "description": "Run the bounded offline C2PA adapter without making a release decision.",
@@ -1303,6 +1303,133 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/C2PAVerificationResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rightsgate/rights/references/image": {
+      "post": {
+        "tags": [
+          "RightsGate"
+        ],
+        "summary": "Derive Image Reference",
+        "description": "Derive a byte-bound governed reference record using the server adapter.",
+        "operationId": "derive_image_reference_api_v1_rightsgate_rights_references_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_derive_image_reference_api_v1_rightsgate_rights_references_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistryImage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rightsgate/assessments": {
+      "post": {
+        "tags": [
+          "RightsGate"
+        ],
+        "summary": "Execute Assessment",
+        "description": "Run the implemented lanes under durable idempotency and fail-closed policy.",
+        "operationId": "execute_assessment_api_v1_rightsgate_assessments_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_execute_assessment_api_v1_rightsgate_assessments_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentExecutionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rightsgate/assessments/{idempotency_key}": {
+      "get": {
+        "tags": [
+          "RightsGate"
+        ],
+        "summary": "Get Assessment Record",
+        "description": "Retrieve durable status and a completed result without raw asset bytes.",
+        "operationId": "get_assessment_record_api_v1_rightsgate_assessments__idempotency_key__get",
+        "parameters": [
+          {
+            "name": "idempotency_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentRecordResponse"
                 }
               }
             }
@@ -1612,6 +1739,144 @@
         ],
         "title": "AssessmentContext"
       },
+      "AssessmentExecutionResponse": {
+        "properties": {
+          "receipt_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.execution-receipt.v1",
+            "title": "Receipt Schema",
+            "default": "veilgraph.rightsgate.execution-receipt.v1"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "title": "Idempotency Key"
+          },
+          "request_sha256": {
+            "type": "string",
+            "title": "Request Sha256"
+          },
+          "execution_sha256": {
+            "type": "string",
+            "title": "Execution Sha256"
+          },
+          "assessment_sha256": {
+            "type": "string",
+            "title": "Assessment Sha256"
+          },
+          "replayed": {
+            "type": "boolean",
+            "title": "Replayed"
+          },
+          "release_authorization": {
+            "type": "boolean",
+            "const": false,
+            "title": "Release Authorization",
+            "default": false
+          },
+          "assessment": {
+            "$ref": "#/components/schemas/RightsGateAssessment-Output"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "idempotency_key",
+          "request_sha256",
+          "execution_sha256",
+          "assessment_sha256",
+          "replayed",
+          "assessment"
+        ],
+        "title": "AssessmentExecutionResponse"
+      },
+      "AssessmentRecordResponse": {
+        "properties": {
+          "record_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.execution-record.v1",
+            "title": "Record Schema",
+            "default": "veilgraph.rightsgate.execution-record.v1"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "title": "Idempotency Key"
+          },
+          "request_sha256": {
+            "type": "string",
+            "title": "Request Sha256"
+          },
+          "execution_sha256": {
+            "type": "string",
+            "title": "Execution Sha256"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "COMPLETE",
+              "FAILED"
+            ],
+            "title": "Status"
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count"
+          },
+          "lease_expires_at": {
+            "type": "string",
+            "title": "Lease Expires At"
+          },
+          "assessment_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Sha256"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "release_authorization": {
+            "type": "boolean",
+            "const": false,
+            "title": "Release Authorization",
+            "default": false
+          },
+          "assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RightsGateAssessment-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "idempotency_key",
+          "request_sha256",
+          "execution_sha256",
+          "status",
+          "attempt_count",
+          "lease_expires_at"
+        ],
+        "title": "AssessmentRecordResponse"
+      },
       "AssessmentState": {
         "type": "string",
         "enum": [
@@ -1743,7 +2008,7 @@
         ],
         "title": "AssetDescriptor"
       },
-      "AssetExposureGraph": {
+      "AssetExposureGraph-Input": {
         "properties": {
           "schema": {
             "type": "string",
@@ -1763,7 +2028,50 @@
           },
           "nodes": {
             "items": {
-              "$ref": "#/components/schemas/ExposureGraphNode"
+              "$ref": "#/components/schemas/ExposureGraphNode-Input"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/ExposureGraphEdge"
+            },
+            "type": "array",
+            "title": "Edges"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "asset_sha256",
+          "root_node_id",
+          "nodes"
+        ],
+        "title": "AssetExposureGraph"
+      },
+      "AssetExposureGraph-Output": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.asset-exposure-graph.v1",
+            "title": "Schema",
+            "default": "veilgraph.rightsgate.asset-exposure-graph.v1"
+          },
+          "asset_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Asset Sha256"
+          },
+          "root_node_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Root Node Id"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/ExposureGraphNode-Output"
             },
             "type": "array",
             "minItems": 1,
@@ -1976,6 +2284,83 @@
           "events"
         ],
         "title": "AuditLedgerResponse"
+      },
+      "Body_derive_image_reference_api_v1_rightsgate_rights_references_image_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "reference_id": {
+            "type": "string",
+            "title": "Reference Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReferenceKind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "rights_holder": {
+            "type": "string",
+            "title": "Rights Holder"
+          },
+          "source_record_id": {
+            "type": "string",
+            "title": "Source Record Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "reference_id",
+          "kind",
+          "title",
+          "rights_holder",
+          "source_record_id"
+        ],
+        "title": "Body_derive_image_reference_api_v1_rightsgate_rights_references_image_post"
+      },
+      "Body_execute_assessment_api_v1_rightsgate_assessments_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "request_json": {
+            "type": "string",
+            "title": "Request Json"
+          },
+          "rights_registry_json": {
+            "type": "string",
+            "title": "Rights Registry Json"
+          },
+          "licence_registry_json": {
+            "type": "string",
+            "title": "Licence Registry Json"
+          },
+          "policy_json": {
+            "type": "string",
+            "title": "Policy Json"
+          },
+          "max_hamming_distance": {
+            "type": "integer",
+            "title": "Max Hamming Distance",
+            "default": 6
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "request_json",
+          "rights_registry_json",
+          "licence_registry_json",
+          "policy_json"
+        ],
+        "title": "Body_execute_assessment_api_v1_rightsgate_assessments_post"
       },
       "Body_inspect_c2pa_api_v1_rightsgate_provenance_c2pa_post": {
         "properties": {
@@ -2405,11 +2790,17 @@
             "title": "Contract Status",
             "default": "IMPLEMENTED"
           },
+          "execution_status": {
+            "type": "string",
+            "const": "IMPLEMENTED",
+            "title": "Execution Status",
+            "default": "IMPLEMENTED"
+          },
           "detector_status": {
             "type": "string",
-            "const": "NOT_INCLUDED",
+            "const": "PARTIAL",
             "title": "Detector Status",
-            "default": "NOT_INCLUDED"
+            "default": "PARTIAL"
           },
           "schemas": {
             "additionalProperties": {
@@ -3148,7 +3539,7 @@
         ],
         "title": "ExposureGraphEdge"
       },
-      "ExposureGraphNode": {
+      "ExposureGraphNode-Input": {
         "properties": {
           "node_id": {
             "type": "string",
@@ -3157,6 +3548,62 @@
           },
           "kind": {
             "$ref": "#/components/schemas/GraphNodeKind-Input"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Attributes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "node_id",
+          "kind",
+          "label"
+        ],
+        "title": "ExposureGraphNode"
+      },
+      "ExposureGraphNode-Output": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Node Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/app__rightsgate__contracts__GraphNodeKind"
           },
           "label": {
             "type": "string",
@@ -3408,18 +3855,6 @@
         ],
         "title": "GraphNodeKind"
       },
-      "GraphNodeKind-Output": {
-        "type": "string",
-        "enum": [
-          "DOCUMENT",
-          "SUBJECT",
-          "RELATED_PERSON",
-          "DIRECT_IDENTIFIER",
-          "QUASI_IDENTIFIER",
-          "VISUAL_IDENTIFIER"
-        ],
-        "title": "GraphNodeKind"
-      },
       "GraphNodeResponse": {
         "properties": {
           "id": {
@@ -3427,7 +3862,7 @@
             "title": "Id"
           },
           "kind": {
-            "$ref": "#/components/schemas/GraphNodeKind-Output"
+            "$ref": "#/components/schemas/app__core__enums__GraphNodeKind"
           },
           "label": {
             "type": "string",
@@ -3962,6 +4397,72 @@
         ],
         "title": "ProvenanceVerdict"
       },
+      "ReferenceKind": {
+        "type": "string",
+        "enum": [
+          "COPYRIGHTED_WORK",
+          "TRADEMARK"
+        ],
+        "title": "ReferenceKind"
+      },
+      "RegistryImage": {
+        "properties": {
+          "reference_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Reference Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReferenceKind"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "rights_holder": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Rights Holder"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256"
+          },
+          "dhash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{16}$",
+            "title": "Dhash"
+          },
+          "media_type": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Media Type"
+          },
+          "source_record_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Source Record Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reference_id",
+          "kind",
+          "title",
+          "rights_holder",
+          "sha256",
+          "dhash",
+          "media_type",
+          "source_record_id"
+        ],
+        "title": "RegistryImage"
+      },
       "RepresentationKind": {
         "type": "string",
         "enum": [
@@ -4102,7 +4603,7 @@
         ],
         "title": "RightsAssessment"
       },
-      "RightsGateAssessment": {
+      "RightsGateAssessment-Input": {
         "properties": {
           "schema": {
             "type": "string",
@@ -4142,7 +4643,74 @@
             "title": "Evidence"
           },
           "exposure_graph": {
-            "$ref": "#/components/schemas/AssetExposureGraph"
+            "$ref": "#/components/schemas/AssetExposureGraph-Input"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceAssessment"
+          },
+          "rights": {
+            "$ref": "#/components/schemas/RightsAssessment"
+          },
+          "deployment": {
+            "$ref": "#/components/schemas/DeploymentAssessment"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "assessment_id",
+          "created_at",
+          "asset",
+          "context",
+          "components",
+          "exposure_graph",
+          "provenance",
+          "rights",
+          "deployment"
+        ],
+        "title": "RightsGateAssessment"
+      },
+      "RightsGateAssessment-Output": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.assessment.v1",
+            "title": "Schema",
+            "default": "veilgraph.rightsgate.assessment.v1"
+          },
+          "assessment_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Assessment Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "asset": {
+            "$ref": "#/components/schemas/AssetDescriptor"
+          },
+          "context": {
+            "$ref": "#/components/schemas/AssessmentContext"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentRecord"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Components"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidencePointer"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "exposure_graph": {
+            "$ref": "#/components/schemas/AssetExposureGraph-Output"
           },
           "provenance": {
             "$ref": "#/components/schemas/ProvenanceAssessment"
@@ -4689,6 +5257,34 @@
           "label"
         ],
         "title": "VideoEvidenceUnitResponse"
+      },
+      "app__core__enums__GraphNodeKind": {
+        "type": "string",
+        "enum": [
+          "DOCUMENT",
+          "SUBJECT",
+          "RELATED_PERSON",
+          "DIRECT_IDENTIFIER",
+          "QUASI_IDENTIFIER",
+          "VISUAL_IDENTIFIER"
+        ],
+        "title": "GraphNodeKind"
+      },
+      "app__rightsgate__contracts__GraphNodeKind": {
+        "type": "string",
+        "enum": [
+          "ASSET",
+          "WORK",
+          "MARK",
+          "PERSON",
+          "VOICE",
+          "LICENCE",
+          "CONSENT",
+          "TRANSFORMATION",
+          "TERRITORY",
+          "CAMPAIGN"
+        ],
+        "title": "GraphNodeKind"
       }
     }
   }

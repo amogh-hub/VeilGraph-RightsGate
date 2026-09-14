@@ -40,7 +40,7 @@ The source verifier permits only that documented omission and rejects any other 
 
 ## RightsGate release state
 
-There is no signed RightsGate release yet. Current work is an engineering foundation and challenge plan. A competition release may be called signed only after its own manifest binds the RightsGate code, dependency state, policy, models, benchmark artifacts and evidence package.
+There is no signed RightsGate release yet. Current work is an implemented, non-authorizing image prototype with challenge contracts, C2PA inspection, governed reference retrieval, licence evaluation, deterministic policy, durable orchestration and a review UI. A competition release may be called signed only after its own manifest binds the RightsGate code, dependency state, administered policy and registries, models, benchmark artifacts and evidence package.
 
 ## Repository hygiene
 

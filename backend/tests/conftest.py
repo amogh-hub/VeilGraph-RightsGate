@@ -14,6 +14,7 @@ from main import app
 @pytest.fixture(autouse=True)
 def clean_state():
     with db.connection() as conn:
+        conn.execute("DELETE FROM rightsgate_assessments")
         conn.execute("DELETE FROM destruction_receipts")
         conn.execute("DELETE FROM mentions")
         conn.execute("DELETE FROM canonical_entities")

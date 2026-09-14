@@ -50,6 +50,29 @@ export interface components {
       "territories": Array<string>
       "brand_profile"?: string | null
     }
+    "AssessmentExecutionResponse": {
+      "receipt_schema"?: string
+      "idempotency_key": string
+      "request_sha256": string
+      "execution_sha256": string
+      "assessment_sha256": string
+      "replayed": boolean
+      "release_authorization"?: boolean
+      "assessment": components['schemas']['RightsGateAssessment-Output']
+    }
+    "AssessmentRecordResponse": {
+      "record_schema"?: string
+      "idempotency_key": string
+      "request_sha256": string
+      "execution_sha256": string
+      "status": "PENDING" | "COMPLETE" | "FAILED"
+      "attempt_count": number
+      "lease_expires_at": string
+      "assessment_sha256"?: string | null
+      "failure_code"?: string | null
+      "release_authorization"?: boolean
+      "assessment"?: components['schemas']['RightsGateAssessment-Output'] | null
+    }
     "AssessmentState": "COMPLETE" | "PARTIAL" | "UNAVAILABLE"
     "AssessmentValidationReceipt": {
       "receipt_schema"?: string
@@ -70,11 +93,18 @@ export interface components {
       "width"?: number | null
       "height"?: number | null
     }
-    "AssetExposureGraph": {
+    "AssetExposureGraph-Input": {
       "schema"?: string
       "asset_sha256": string
       "root_node_id": string
-      "nodes": Array<components['schemas']['ExposureGraphNode']>
+      "nodes": Array<components['schemas']['ExposureGraphNode-Input']>
+      "edges"?: Array<components['schemas']['ExposureGraphEdge']>
+    }
+    "AssetExposureGraph-Output": {
+      "schema"?: string
+      "asset_sha256": string
+      "root_node_id": string
+      "nodes": Array<components['schemas']['ExposureGraphNode-Output']>
       "edges"?: Array<components['schemas']['ExposureGraphEdge']>
     }
     "AssetIR": {
@@ -108,6 +138,22 @@ export interface components {
       "chain_head": string
       "error"?: string | null
       "events": Array<components['schemas']['AuditEventResponse']>
+    }
+    "Body_derive_image_reference_api_v1_rightsgate_rights_references_image_post": {
+      "file": string
+      "reference_id": string
+      "kind": components['schemas']['ReferenceKind']
+      "title": string
+      "rights_holder": string
+      "source_record_id": string
+    }
+    "Body_execute_assessment_api_v1_rightsgate_assessments_post": {
+      "file": string
+      "request_json": string
+      "rights_registry_json": string
+      "licence_registry_json": string
+      "policy_json": string
+      "max_hamming_distance"?: number
     }
     "Body_inspect_c2pa_api_v1_rightsgate_provenance_c2pa_post": {
       "file": string
@@ -190,6 +236,7 @@ export interface components {
     "ContractBundleResponse": {
       "bundle_schema"?: string
       "contract_status"?: string
+      "execution_status"?: string
       "detector_status"?: string
       "schemas": Record<string, Record<string, unknown>>
     }
@@ -301,9 +348,16 @@ export interface components {
       "evidence_ids": Array<string>
       "attributes"?: Record<string, string | number | number | boolean | null>
     }
-    "ExposureGraphNode": {
+    "ExposureGraphNode-Input": {
       "node_id": string
       "kind": components['schemas']['GraphNodeKind-Input']
+      "label": string
+      "evidence_ids"?: Array<string>
+      "attributes"?: Record<string, string | number | number | boolean | null>
+    }
+    "ExposureGraphNode-Output": {
+      "node_id": string
+      "kind": components['schemas']['app__rightsgate__contracts__GraphNodeKind']
       "label": string
       "evidence_ids"?: Array<string>
       "attributes"?: Record<string, string | number | number | boolean | null>
@@ -342,10 +396,9 @@ export interface components {
     }
     "GraphEdgeType": "CONTAINS" | "IDENTIFIES" | "DESCRIBES" | "RELATED_TO" | "CO_OCCURS_WITH"
     "GraphNodeKind-Input": "ASSET" | "WORK" | "MARK" | "PERSON" | "VOICE" | "LICENCE" | "CONSENT" | "TRANSFORMATION" | "TERRITORY" | "CAMPAIGN"
-    "GraphNodeKind-Output": "DOCUMENT" | "SUBJECT" | "RELATED_PERSON" | "DIRECT_IDENTIFIER" | "QUASI_IDENTIFIER" | "VISUAL_IDENTIFIER"
     "GraphNodeResponse": {
       "id": string
-      "kind": components['schemas']['GraphNodeKind-Output']
+      "kind": components['schemas']['app__core__enums__GraphNodeKind']
       "label": string
       "entity_id"?: string | null
       "entity_type"?: components['schemas']['EntityType'] | null
@@ -437,6 +490,17 @@ export interface components {
       "limitations"?: Array<string>
     }
     "ProvenanceVerdict": "AUTHENTIC" | "AI_GENERATED" | "PARTIALLY_GENERATED" | "TAMPERED" | "UNKNOWN"
+    "ReferenceKind": "COPYRIGHTED_WORK" | "TRADEMARK"
+    "RegistryImage": {
+      "reference_id": string
+      "kind": components['schemas']['ReferenceKind']
+      "title": string
+      "rights_holder": string
+      "sha256": string
+      "dhash": string
+      "media_type": string
+      "source_record_id": string
+    }
     "RepresentationKind": "ORIGINAL" | "VISUAL_FRAME" | "AUDIO_TRACK" | "TEXT_TRACK" | "THUMBNAIL"
     "RequestValidationReceipt": {
       "receipt_schema"?: string
@@ -463,7 +527,7 @@ export interface components {
       "claims"?: Array<components['schemas']['ClaimRecord']>
       "limitations"?: Array<string>
     }
-    "RightsGateAssessment": {
+    "RightsGateAssessment-Input": {
       "schema"?: string
       "assessment_id": string
       "created_at": string
@@ -471,7 +535,20 @@ export interface components {
       "context": components['schemas']['AssessmentContext']
       "components": Array<components['schemas']['ComponentRecord']>
       "evidence"?: Array<components['schemas']['EvidencePointer']>
-      "exposure_graph": components['schemas']['AssetExposureGraph']
+      "exposure_graph": components['schemas']['AssetExposureGraph-Input']
+      "provenance": components['schemas']['ProvenanceAssessment']
+      "rights": components['schemas']['RightsAssessment']
+      "deployment": components['schemas']['DeploymentAssessment']
+    }
+    "RightsGateAssessment-Output": {
+      "schema"?: string
+      "assessment_id": string
+      "created_at": string
+      "asset": components['schemas']['AssetDescriptor']
+      "context": components['schemas']['AssessmentContext']
+      "components": Array<components['schemas']['ComponentRecord']>
+      "evidence"?: Array<components['schemas']['EvidencePointer']>
+      "exposure_graph": components['schemas']['AssetExposureGraph-Output']
       "provenance": components['schemas']['ProvenanceAssessment']
       "rights": components['schemas']['RightsAssessment']
       "deployment": components['schemas']['DeploymentAssessment']
@@ -572,5 +649,7 @@ export interface components {
       "full_ocr_selected"?: boolean
       "security_promoted"?: boolean
     }
+    "app__core__enums__GraphNodeKind": "DOCUMENT" | "SUBJECT" | "RELATED_PERSON" | "DIRECT_IDENTIFIER" | "QUASI_IDENTIFIER" | "VISUAL_IDENTIFIER"
+    "app__rightsgate__contracts__GraphNodeKind": "ASSET" | "WORK" | "MARK" | "PERSON" | "VOICE" | "LICENCE" | "CONSENT" | "TRANSFORMATION" | "TERRITORY" | "CAMPAIGN"
   }
 }

@@ -329,10 +329,14 @@ def match_reference_image(
                 attributes={
                     "distance": distance,
                     "exact": exact,
+                    "max_hamming_distance": max_hamming_distance,
                     "reference_id": reference.reference_id,
                     "reference_kind": reference.kind.value,
+                    "reference_title": reference.title,
+                    "rights_holder": reference.rights_holder,
                     "registry_id": registry.registry_id,
                     "registry_version": registry.version,
+                    "source_record_id": reference.source_record_id,
                 },
             )
         )

@@ -29,7 +29,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 1 — Contract the domain before adding models
 
-**Status:** IN PROGRESS — versioned domain schemas, graph topology, deterministic fingerprints, public validation endpoints and contract tests are implemented. Durable idempotency storage and the trusted execution endpoint remain before exit.
+**Status:** COMPLETE — versioned schemas, deterministic fingerprints, durable SQLite idempotency leases, replay/conflict/crash-recovery semantics, trusted image execution and contract/API tests are implemented.
 
 - Define `AssetIR`, `ClaimRecord`, `EvidencePointer`, `DimensionAssessment` and `AssetExposureGraph` schemas.
 - Define an idempotent assessment API and versioned result format.
@@ -53,7 +53,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 3 — Build the rights lane
 
-**Status:** IN PROGRESS — a versioned local image-reference registry plus byte-exact and perceptual candidate retrieval are implemented with safety, transformation and no-match semantics tests. Licence, consent, territory, likeness, voice, localization and benchmark work remains before exit.
+**Status:** IN PROGRESS — a versioned local image-reference registry, server-derived records, exact/perceptual candidate retrieval and deterministic licence status/date/territory/channel/intended-use evaluation are implemented. Consent, likeness, voice, localization, broader licence semantics and benchmark work remain before exit.
 
 - Create a governed reference registry with works, logos, licences, consent and territory.
 - Add perceptual and embedding-based candidate retrieval for image, video and audio.
@@ -66,6 +66,8 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 4 — Compile policy and control release
 
+**Status:** IN PROGRESS — deterministic audience, brand-profile, channel, territory, provenance, rights and mandatory-component rules now produce evidence-cited `GO`/`REVIEW`/`BLOCK` assessments. Administered policy trust, human overrides, webhooks, adversarial release verification and signed authorization remain.
+
 - Extend the versioned policy compiler for brand, regulatory, territory and intended-use rules.
 - Produce deterministic `GO`, `REVIEW` or `BLOCK` outcomes with cited rules.
 - Add human-review overrides with identity, reason and timestamp.
@@ -76,6 +78,8 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 **Exit:** no media can receive `GO` without complete mandatory evidence and successful release checks.
 
 ### Gate 5 — Evaluate and demonstrate
+
+**Status:** IN PROGRESS — a dedicated RightsGate review screen now runs the integrated image workflow and exposes all three dimensions, evidence, component health and commitments. A frozen 32-case synthetic rights-retrieval sanity set provides exact-only ablation metrics, but representative multi-dimension evaluation, CMS simulation and rehearsed demo cases remain.
 
 - Build a legally sourced, versioned dataset and freeze train, validation and test families.
 - Compare metadata-only, C2PA-only, watermark-only and individual-detector baselines.

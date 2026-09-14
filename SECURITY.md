@@ -32,9 +32,13 @@ The COTS benchmark tooling is an explicitly separate evaluation path and may con
 
 Plaintext identity values may exist in process memory while a job is active. RightsGate does not claim that a compromised OS can be prevented from reading process memory.
 
+The RightsGate assessment endpoint processes candidate and reference image bytes in memory and persists no raw media. Its SQLite record contains the canonical request context, structured assessment, execution commitment and status metadata. That context can still be sensitive and must be protected by host access controls and the future RightsGate-specific retention lifecycle.
+
 ## Signing and integrity
 
 VeilGraph creates a local Ed25519 device key on first use. Verified outputs can receive certificates/proof packages bound to exact artifact, graph, verification and audit commitments. Audit events form a SHA-256 previous-hash chain.
+
+RightsGate assessment commitments are currently SHA-256 integrity records, not signed release certificates. Every RightsGate execution response is explicitly non-authorizing until administered policy trust and signed release verification are implemented.
 
 **Never publish or copy the private device key.** This public repository intentionally excludes `.veilgraph/device-ed25519.key`.
 

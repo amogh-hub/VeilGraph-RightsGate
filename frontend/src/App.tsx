@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { api } from './api/client'
+import { RightsGateApp } from './rightsgate/RightsGateApp'
 import type {
   Analysis,
   AuditLedger,
@@ -481,7 +482,7 @@ function BrandLockup() {
   )
 }
 
-export default function App() {
+function PrivacyApp({ onOpenRightsGate }: { onOpenRightsGate: () => void }) {
   const [status, setStatus] = useState<OfflineStatus | null>(null)
   const [purpose, setPurpose] = useState('Public evidence release')
   const [recipient, setRecipient] = useState('Citizen information portal')
@@ -978,6 +979,7 @@ export default function App() {
         <BrandLockup />
         <div className="chrome-actions">
           <div className={`local-status ${status?.offline_mode ? 'online' : ''}`}><i /><span>{status?.offline_mode ? 'Local · Private' : 'Local status unavailable'}</span></div>
+          <button className="product-switch" onClick={onOpenRightsGate}>Open RightsGate</button>
           <button className="theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} appearance`} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} appearance`} aria-pressed={theme === 'dark'}><span>{theme === 'dark' ? '☼' : '◐'}</span></button>
         </div>
       </header>
@@ -1217,4 +1219,20 @@ export default function App() {
       ) : null}
     </div>
   )
+}
+
+export default function App() {
+  const [product, setProduct] = useState<'rightsgate' | 'privacy'>(() => (
+    window.location.hash === '#privacy' ? 'privacy' : 'rightsgate'
+  ))
+
+  const openProduct = (next: 'rightsgate' | 'privacy') => {
+    window.location.hash = next === 'privacy' ? 'privacy' : 'rightsgate'
+    setProduct(next)
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }
+
+  return product === 'rightsgate'
+    ? <RightsGateApp onOpenPrivacy={() => openProduct('privacy')} />
+    : <PrivacyApp onOpenRightsGate={() => openProduct('rightsgate')} />
 }

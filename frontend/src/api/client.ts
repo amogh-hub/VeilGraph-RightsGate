@@ -15,6 +15,7 @@ import type {
   TransformResult,
   Verification,
 } from './types'
+import type { RegistryImage, RightsGateExecutionReceipt } from '../rightsgate/types'
 
 const API = '/api/v1'
 
@@ -28,7 +29,13 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   })
   if (!response.ok) {
     const body = await response.json().catch(() => ({ detail: response.statusText }))
-    throw new Error(body.detail ?? `Request failed: ${response.status}`)
+    const detail = body.detail
+    const message = typeof detail === 'string'
+      ? detail
+      : detail
+        ? JSON.stringify(detail)
+        : `Request failed: ${response.status}`
+    throw new Error(message)
   }
   return response.json() as Promise<T>
 }
@@ -101,4 +108,45 @@ export const api = {
     `${API}/jobs/${jobId}/outputs/${outputId}/synthetic-export-receipt?format=${format}`,
   destroy: (jobId: string) =>
     request<Destruction>(`/jobs/${jobId}/destroy`, { method: 'DELETE' }),
+  deriveRightsImageReference: (
+    file: File,
+    metadata: {
+      referenceId: string
+      kind: 'COPYRIGHTED_WORK' | 'TRADEMARK'
+      title: string
+      rightsHolder: string
+      sourceRecordId: string
+    },
+  ) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('reference_id', metadata.referenceId)
+    form.append('kind', metadata.kind)
+    form.append('title', metadata.title)
+    form.append('rights_holder', metadata.rightsHolder)
+    form.append('source_record_id', metadata.sourceRecordId)
+    return request<RegistryImage>('/rightsgate/rights/references/image', { method: 'POST', body: form })
+  },
+  executeRightsGate: (
+    file: File,
+    controls: {
+      assessmentRequest: Record<string, unknown>
+      rightsRegistry: Record<string, unknown>
+      licenceRegistry: Record<string, unknown>
+      publicationPolicy: Record<string, unknown>
+      maxHammingDistance?: number
+    },
+  ) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('request_json', JSON.stringify(controls.assessmentRequest))
+    form.append('rights_registry_json', JSON.stringify(controls.rightsRegistry))
+    form.append('licence_registry_json', JSON.stringify(controls.licenceRegistry))
+    form.append('policy_json', JSON.stringify(controls.publicationPolicy))
+    form.append('max_hamming_distance', String(controls.maxHammingDistance ?? 6))
+    return request<RightsGateExecutionReceipt>('/rightsgate/assessments', {
+      method: 'POST',
+      body: form,
+    })
+  },
 }

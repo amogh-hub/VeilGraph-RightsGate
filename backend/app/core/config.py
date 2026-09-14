@@ -7,8 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="VEILGRAPH_", extra="ignore")
 
-    app_name: str = "VeilGraph"
-    version: str = "0.6.1-phase2-final-hardening"
+    app_name: str = "VeilGraph RightsGate"
+    version: str = "0.2.0-rightsgate-prototype"
     offline_mode: bool = True
     bind_host: str = "127.0.0.1"
     bind_port: int = 8000
@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     max_render_pixels_per_page: int = 30_000_000
     max_total_render_pixels: int = 250_000_000
     max_image_pixels: int = 40_000_000
+    rightsgate_execution_lease_seconds: int = 10 * 60
+    rightsgate_max_control_json_bytes: int = 2 * 1024 * 1024
     max_video_duration_seconds: float = 60.0
     max_video_frames: int = 3600
     max_video_width: int = 1920

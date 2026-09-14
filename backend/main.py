@@ -71,8 +71,9 @@ app = FastAPI(
     version=settings.version,
     description=(
         "Evidence-first pre-publication media trust gateway derived from VeilGraph. "
-        "The current API exposes the inherited privacy foundation and versioned RightsGate "
-        "contracts; challenge-specific detector availability is declared separately."
+        "The API exposes the inherited privacy foundation plus versioned RightsGate contracts, "
+        "offline C2PA inspection, governed image retrieval, licence evaluation, deterministic "
+        "policy and durable non-authorizing image assessments."
     ),
     lifespan=lifespan,
 )

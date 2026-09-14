@@ -6,19 +6,17 @@
 
 **VeilGraph RightsGate — Evidence-First Trust Gateway for AI Media**
 
-## Draft (284 words)
+## Draft (276 words)
 
-VeilGraph RightsGate is a local-first pre-publication trust gateway that converts each media asset into an inspectable Asset Exposure Graph instead of returning one opaque detector score. It extends the tested VeilGraph privacy platform through three coordinated evidence lanes.
+VeilGraph RightsGate is a local-first pre-publication trust gateway that converts each media asset into an inspectable Asset Exposure Graph rather than returning one opaque detector score. It extends VeilGraph’s tested privacy, policy and evidence foundations into three coordinated dimensions: provenance, rights exposure and deployment readiness.
 
-First, the provenance lane validates C2PA credentials, signatures, metadata continuity and watermark signals, then combines them with forensic models for generation, splicing, inpainting and voice cloning. It reports whole-asset and region/timeline findings, while absence of a credential is treated as unknown rather than proof of manipulation.
+The current image prototype validates embedded C2PA Content Credentials offline and distinguishes recognized whole/partial AI declarations, cryptographic mismatches and unknown provenance. Missing credentials remain unknown rather than becoming evidence of human authorship. A governed reference registry then performs exact-byte and perceptual candidate retrieval. Every match is bound to the assessed bytes, registry version, threshold and source record, and is treated as review evidence—not an infringement judgment.
 
-Second, the rights lane compares visual and audio features against approved reference collections, detecting near-duplicate copyrighted material, logos and trademarks, and face or voice similarity against a consented likeness registry. The graph connects each detected work, person, mark, licence, territory, campaign and transformation so individually weak clues can reveal a high-risk relationship.
+For each retrieved candidate, a separate licence evaluator checks status, validity dates, territory, channel and intended use. A versioned policy compiler applies audience, brand-profile and regional rules, preserves unavailable mandatory detectors, and deterministically returns GO, REVIEW or BLOCK. The integrated workflow stores idempotent assessment records, rejects changed inputs under a reused key, verifies stored commitments on replay and presents per-dimension confidence, claims, evidence, component health and policy citations. Caller-supplied policy cannot authorize publication; release authorization remains locked.
 
-Third, a configurable policy compiler evaluates those findings for brand, consent, channel, audience and regional rules. Machine-learning components may nominate risks, but cannot authorize publication. Deterministic gates issue GO, REVIEW or BLOCK; low-confidence and contradictory evidence requires human review. Every decision carries source-level evidence, confidence, model and policy versions, hashes, and a signed proof package.
+The next competition phase adds independent AI-media forensics, general watermark-tampering analysis, localized logo/trademark detection and consented likeness/voice comparison, followed by an administered signed release boundary and CMS webhook.
 
-The prototype builds on VeilGraph’s existing multi-format pipeline, local processing, adversarial release checks, audit chain and 268-test regression. TECHgium development adds the provenance and rights detectors, reference registry, content-workflow API and per-dimension dashboard.
-
-Evaluation will use a declared set of licensed, public-domain, synthetic and adversarially altered assets. We will report accuracy and false-positive rate for provenance, rights and policy outcomes; localization quality; decision latency; and reviewer effort, compared with C2PA/watermark-only and single-detector baselines. The goal is to prevent unlicensed content and unauthorized likeness use before publication without exposing confidential media to external services.
+Evaluation will freeze a declared set of licensed, public-domain, synthetic and adversarially transformed assets before metrics are calculated. We will report accuracy, false-positive rate, abstention, unauthorized-GO rate, latency and reviewer effort for each dimension, with metadata-only, C2PA-only, watermark-only and single-detector baselines. This provides measurable evidence that RightsGate goes beyond provenance standards alone while keeping confidential media on the organization’s device.
 
 ## Suggested keywords
 

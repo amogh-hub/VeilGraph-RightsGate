@@ -13,7 +13,7 @@
 
 Uploaded media, filenames, metadata, C2PA assertions, embedded text/OCR, external reference records, webhooks and all model or tool outputs are untrusted inputs. They may supply evidence but may never change the assessment goal, select privileged tools, alter policy, authorize release or sign proof.
 
-Release authority belongs to deterministic policy and verification code operating on validated schemas.
+Release authority belongs only to administered deterministic policy and verification code operating on validated schemas. The current public executor accepts caller-supplied policy and registry documents, so its receipts are deliberately non-authorizing even when the computed decision is `GO`.
 
 ## Adversaries
 
@@ -50,6 +50,16 @@ Release authority belongs to deterministic policy and verification code operatin
 6. Cache entries are invalidated when the asset, policy, threshold, detector or reference corpus changes.
 7. Overrides record reviewer identity, reason, prior result and timestamp.
 8. Retention and deletion apply to source media, features, references, logs and derived evidence.
+
+## Implemented execution controls
+
+- exact asset SHA-256, byte length, detected media type and decoded dimensions are checked before work is reserved;
+- rights, licence and policy registries have canonical commitments included in the execution fingerprint;
+- SQLite `BEGIN IMMEDIATE` reservations provide cross-process serialization with bounded recovery leases;
+- changed thresholds, policy or registry inputs conflict under a reused idempotency key;
+- completed assessment JSON is revalidated and recomputed against its stored commitment on replay;
+- raw assessment and reference media is processed in memory and is not stored in the RightsGate assessment table;
+- caller-supplied governance documents can produce decision support but always return `release_authorization: false`.
 
 ## Non-goals
 

@@ -4,7 +4,14 @@ import asyncio
 from contextlib import asynccontextmanager
 
 
-_HEAVY_SUFFIXES = ("/analyse", "/transform", "/verify", "/provenance/c2pa")
+_HEAVY_SUFFIXES = (
+    "/analyse",
+    "/transform",
+    "/verify",
+    "/provenance/c2pa",
+    "/rightsgate/assessments",
+    "/rightsgate/rights/references/image",
+)
 
 
 class AdmissionRejected(RuntimeError):

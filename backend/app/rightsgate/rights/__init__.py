@@ -9,6 +9,13 @@ from .image_registry import (
     image_dhash,
     match_reference_image,
 )
+from .licensing import (
+    LicenceEvaluationResult,
+    LicenceRecord,
+    LicenceRegistry,
+    LicenceState,
+    evaluate_candidate_licences,
+)
 
 __all__ = [
     "ReferenceKind",
@@ -18,4 +25,9 @@ __all__ = [
     "build_registry_image",
     "image_dhash",
     "match_reference_image",
+    "LicenceEvaluationResult",
+    "LicenceRecord",
+    "LicenceRegistry",
+    "LicenceState",
+    "evaluate_candidate_licences",
 ]

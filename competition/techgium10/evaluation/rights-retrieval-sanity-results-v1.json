@@ -1,0 +1,32 @@
+{
+  "schema": "veilgraph.rightsgate.evaluation-summary.v1",
+  "dataset_id": "rightsgate.synthetic-rights-retrieval-sanity.v1",
+  "manifest_sha256": "aeb0e306d9d1780066f706e9875b001fe4bbd8013dfc55ed71f326e2004c8077",
+  "registry_sha256": "67f7e75cb5edfd8a15c45a622affd0b0feb934e64bf823afdae21b5cce62a112",
+  "case_count": 32,
+  "positive_count": 16,
+  "negative_count": 16,
+  "max_hamming_distance": 2,
+  "exact_only": {
+    "true_positive": 8,
+    "true_negative": 16,
+    "false_positive": 0,
+    "false_negative": 8,
+    "accuracy": 0.75,
+    "false_positive_rate": 0.0,
+    "precision": 1.0,
+    "recall": 0.5
+  },
+  "perceptual": {
+    "true_positive": 16,
+    "true_negative": 16,
+    "false_positive": 0,
+    "false_negative": 0,
+    "accuracy": 1.0,
+    "false_positive_rate": 0.0,
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "reproduce": "cd backend && PYTHONPATH=. python run_rightsgate_eval.py",
+  "claim_boundary": "Synthetic resize sanity evidence only; not representative of real-world copyrighted-work or trademark detection."
+}
