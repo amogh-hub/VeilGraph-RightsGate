@@ -1,7 +1,7 @@
 {
   "schema": "veilgraph.rightsgate.signal-evaluation-summary.v1",
   "dataset_id": "rightsgate.synthetic-challenge-signals-sanity.v1",
-  "manifest_sha256": "c8427a34f094614cff7fbd6966d0e7554cbbd497d9025ce36d15dcfa06a7fbff",
+  "manifest_sha256": "1c8a8fb19bbab8847f4d88c715b50f005aab6595ebdbd7c52084a37f4c7df698",
   "registry_sha256": "bc312ca043ccd31c68dd452cb5d8aca1263cd87d659febf868928bb35aeaaddc",
   "case_count": 64,
   "visual_localization": {

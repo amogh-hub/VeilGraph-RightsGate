@@ -40,7 +40,7 @@ def test_frozen_rights_retrieval_sanity_metrics_are_reproducible() -> None:
 def test_frozen_challenge_signal_sanity_metrics_are_reproducible() -> None:
     report = run_signal_evaluation()
 
-    assert report.manifest_sha256 == "c8427a34f094614cff7fbd6966d0e7554cbbd497d9025ce36d15dcfa06a7fbff"
+    assert report.manifest_sha256 == "1c8a8fb19bbab8847f4d88c715b50f005aab6595ebdbd7c52084a37f4c7df698"
     assert report.registry_sha256 == "bc312ca043ccd31c68dd452cb5d8aca1263cd87d659febf868928bb35aeaaddc"
     assert len(report.cases) == 64
     assert all(case.correct for case in report.cases)

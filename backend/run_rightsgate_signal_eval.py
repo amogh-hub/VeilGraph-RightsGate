@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import argparse
+import binascii
 import hashlib
 import io
 import json
+import struct
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-from PIL import Image, ImageDraw, PngImagePlugin
+from PIL import Image, ImageDraw
 
 from app.rightsgate import ProvenanceVerdict
 from app.rightsgate.evaluation import (
@@ -41,13 +43,56 @@ def _ppm(image: Image.Image) -> bytes:
     return buffer.getvalue()
 
 
+def _png_chunk(kind: bytes, payload: bytes) -> bytes:
+    body = kind + payload
+    return struct.pack(">I", len(payload)) + body + struct.pack(">I", binascii.crc32(body))
+
+
+def _stored_zlib(payload: bytes) -> bytes:
+    """Encode a zlib stream with stored DEFLATE blocks for byte portability."""
+
+    stream = bytearray(b"\x78\x01")
+    offset = 0
+    while offset < len(payload):
+        size = min(65_535, len(payload) - offset)
+        final = offset + size == len(payload)
+        stream.append(1 if final else 0)
+        stream.extend(struct.pack("<H", size))
+        stream.extend(struct.pack("<H", size ^ 0xFFFF))
+        stream.extend(payload[offset : offset + size])
+        offset += size
+    first = 1
+    second = 0
+    for value in payload:
+        first = (first + value) % 65_521
+        second = (second + first) % 65_521
+    stream.extend(struct.pack(">I", second << 16 | first))
+    return bytes(stream)
+
+
 def _png(image: Image.Image, metadata: dict[str, str]) -> bytes:
-    info = PngImagePlugin.PngInfo()
-    for key, value in sorted(metadata.items()):
-        info.add_text(key, value)
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG", pnginfo=info)
-    return buffer.getvalue()
+    """Write a minimal uncompressed PNG independent of platform zlib choices."""
+
+    normalized = image.convert("RGB")
+    width, height = normalized.size
+    pixels = normalized.tobytes()
+    stride = width * 3
+    scanlines = b"".join(
+        b"\x00" + pixels[row * stride : (row + 1) * stride]
+        for row in range(height)
+    )
+    chunks = [
+        _png_chunk(
+            b"IHDR",
+            struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0),
+        )
+    ]
+    chunks.extend(
+        _png_chunk(b"tEXt", key.encode("latin-1") + b"\x00" + value.encode("latin-1"))
+        for key, value in sorted(metadata.items())
+    )
+    chunks.extend((_png_chunk(b"IDAT", _stored_zlib(scanlines)), _png_chunk(b"IEND", b"")))
+    return b"\x89PNG\r\n\x1a\n" + b"".join(chunks)
 
 
 def deterministic_mark(seed: int, *, width: int = 220, height: int = 160) -> Image.Image:
