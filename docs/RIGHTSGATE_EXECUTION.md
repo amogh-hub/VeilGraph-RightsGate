@@ -20,12 +20,14 @@ validate control schemas and cross-registry references
   -> compute request + registry + policy + threshold execution fingerprint
   -> atomically reserve/replay the idempotency key
   -> verify embedded C2PA credentials offline
+  -> inspect bounded generator metadata and localized residual consistency
   -> retrieve exact/perceptual governed image candidates
+  -> localize governed visual references with ORB/RANSAC geometry
   -> evaluate licence status/date/territory/channel/intended use
-  -> declare required but missing components unavailable
-  -> compile deterministic GO / REVIEW / BLOCK policy
+  -> compile deterministic GO / REVIEW / BLOCK policy, including scoped regulatory rules
   -> build the Asset Exposure Graph
   -> persist and verify the assessment commitment
+  -> create an Ed25519-signed, non-authorizing CMS decision receipt on request
 ```
 
 The executor version and component versions are included in the execution fingerprint. Changing a registry, policy, threshold or component version prevents stale replay under the same key.
@@ -45,6 +47,8 @@ The executor version and component versions are included in the execution finger
 
 `GET /api/v1/rightsgate/assessments/{idempotency_key}` returns durable status without any raw media bytes.
 
+`POST /api/v1/rightsgate/integrations/cms/decision` binds a CMS content ID to the stored request, execution, asset and assessment commitments. Its deterministic Ed25519 receipt maps `BLOCK`, `REVIEW` and `GO` to `BLOCKED`, `HUMAN_REVIEW_REQUIRED` and `READY_FOR_RELEASE_AUTHORIZATION`. `POST /api/v1/rightsgate/integrations/cms/receipts/verify` verifies the receipt commitment, signer fingerprint and signature.
+
 ## Release boundary
 
 The integrated endpoint is trusted to execute registered code and persist evidence, but the public prototype accepts caller-supplied policy and registry documents. It therefore always returns:
@@ -53,4 +57,4 @@ The integrated endpoint is trusted to execute registered code and persist eviden
 {"release_authorization": false}
 ```
 
-Even a computed `GO` is decision support only. Production publication authorization requires authenticated, administrator-approved policy/registry versions, adversarial release verification and signed proof. Missing mandatory detectors remain explicit and normally force `REVIEW`; an unlicensed governed candidate can deterministically produce `BLOCK`.
+Even a computed `GO` or valid CMS receipt is decision support only. `READY_FOR_RELEASE_AUTHORIZATION` means another administered control may consider release; it is not permission to publish. Production authorization requires authenticated, administrator-approved policy/registry versions and adversarial release verification. Missing mandatory detectors remain explicit and normally force `REVIEW`; an unlicensed governed candidate can deterministically produce `BLOCK`.

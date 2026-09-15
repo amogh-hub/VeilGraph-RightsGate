@@ -2,12 +2,13 @@
 
 ## Implemented boundary
 
-The first rights-retrieval adapter compares an input image with a versioned local registry. Every registry record binds a reference ID and source-record ID to the exact reference SHA-256 and a deterministic 64-bit difference hash. The registry itself has a canonical SHA-256 commitment and becomes the recorded component artifact for every query.
+The rights-retrieval adapters compare an input image with a versioned local registry. Every registry record binds a reference ID and source-record ID to the exact reference SHA-256, a deterministic 64-bit difference hash and, where sufficient structure exists, a bounded ORB feature manifest. The registry itself has a canonical SHA-256 commitment and becomes the recorded component artifact for every query.
 
 Matching uses two signals:
 
 - exact asset SHA-256 equality;
 - perceptual difference-hash Hamming distance under an explicit threshold.
+- local ORB descriptor matching plus RANSAC homography verification for region localization.
 
 Images are normalized for EXIF orientation and decoded under a configurable pixel budget. Evidence binds the candidate bytes, registry version, registry commitment, reference ID, threshold and distance. Raw reference media is not copied into result evidence.
 
@@ -22,7 +23,7 @@ This is candidate retrieval, not copyright or trademark adjudication.
 | Hash does not match supplied asset bytes | request rejected before matching |
 | Decode or safety-budget failure | component `DEGRADED`, dimension `UNAVAILABLE`, fail closed |
 
-A perceptual hash is intentionally a transparent baseline, not the final retrieval system. It creates reproducible evidence and a benchmark target for later embedding, crop-resistant and localized detectors.
+Perceptual hashing and ORB localization are intentionally transparent, governed-reference baselines. The localizer returns a bounding box, feature-match counts and inlier ratio; it cannot discover marks absent from its registry or make a legal trademark determination.
 
 ## Licence evaluation
 
@@ -35,7 +36,7 @@ The integrated workflow derives reference SHA-256 and dHash values server-side t
 - legally sourced positive references and unrelated hard negatives;
 - crop, resize, recompression, color, overlay and partial-copy transformations;
 - precision/recall, false-positive rate and threshold calibration on a frozen split;
-- logo/mark localization instead of whole-image matching;
+- open-world logo/mark detection, hard negatives, occlusion and severe perspective transforms beyond the implemented governed-reference localizer;
 - broader licence terms, consent and contractual conflict interpretation beyond the implemented date, state, intended-use, channel and territory checks;
 - consented likeness and voice reference protocols;
 - reviewer-effort and latency measurements.

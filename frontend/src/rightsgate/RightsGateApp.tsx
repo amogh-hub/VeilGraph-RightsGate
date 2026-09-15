@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api/client'
 import type { OfflineStatus } from '../api/types'
-import type { RightsGateDimension, RightsGateExecutionReceipt } from './types'
+import type { CMSDecisionReceipt, RightsGateDimension, RightsGateExecutionReceipt } from './types'
 
 type Props = { onOpenPrivacy: () => void }
 
@@ -78,6 +78,7 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<RightsGateExecutionReceipt | null>(null)
+  const [cmsReceipt, setCmsReceipt] = useState<CMSDecisionReceipt | null>(null)
   const [boundary, setBoundary] = useState<OfflineStatus | null>(null)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => (
     document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
@@ -104,6 +105,7 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
     setBusy('Binding asset bytes and governed reference')
     setError(null)
     setResult(null)
+    setCmsReceipt(null)
     try {
       const [assetSha, referenceSha, dimensions] = await Promise.all([
         sha256(asset),
@@ -203,6 +205,17 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
         require_rights_clearance: true,
         block_tampered_provenance: true,
         block_unlicensed_reference_match: true,
+        regulatory_rules: [{
+          rule_id: 'demo.synthetic-publication-review',
+          description: 'Synthetic or unresolved public media requires documented human review.',
+          effect: 'REVIEW',
+          territories: [territory.toUpperCase()],
+          channels: [channel],
+          audiences: [audience],
+          brand_profiles: ['default'],
+          provenance_verdicts: ['AI_GENERATED', 'PARTIALLY_GENERATED', 'UNKNOWN'],
+          rights_verdicts: [],
+        }],
       }
       const receipt = await api.executeRightsGate(asset, {
         assessmentRequest,
@@ -211,6 +224,15 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
         publicationPolicy,
       })
       setResult(receipt)
+      setBusy('Creating signed CMS workflow receipt')
+      const workflowReceipt = await api.createRightsGateCmsDecision({
+        cmsSystemId: 'cms.techgium-demo',
+        contentId: `content.${assetSha.slice(0, 24)}`,
+        assessmentIdempotencyKey: receipt.idempotency_key,
+        expectedAssetSha256: assetSha,
+        expectedAssessmentSha256: receipt.assessment_sha256,
+      })
+      setCmsReceipt(workflowReceipt)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'RightsGate assessment failed closed.')
     } finally {
@@ -223,6 +245,7 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
     setError(null)
     setAsset(null)
     setReference(null)
+    setCmsReceipt(null)
   }
 
   const decision = result?.assessment.deployment.decision ?? null
@@ -319,7 +342,11 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
               </aside>
             </div>
 
-            <div className="rg-result-footer"><div><span>Execution fingerprint</span><code>{result.execution_sha256}</code><small>{result.replayed ? 'Durable idempotent replay' : 'First durable execution'}</small></div><button onClick={reset}>Assess another asset</button></div>
+            <div className="rg-result-footer">
+              <div><span>Execution fingerprint</span><code>{result.execution_sha256}</code><small>{result.replayed ? 'Durable idempotent replay' : 'First durable execution'}</small></div>
+              <div><span>CMS workflow receipt</span><code>{cmsReceipt?.receipt_sha256 ?? 'Signing unavailable'}</code><small>{cmsReceipt ? `${humanize(cmsReceipt.payload.workflow_status)} · Ed25519 ${cmsReceipt.signer_fingerprint.slice(0, 16)}…` : 'Assessment remains valid; no CMS receipt was issued.'}</small></div>
+              <button onClick={reset}>Assess another asset</button>
+            </div>
           </section>
         )}
       </main>

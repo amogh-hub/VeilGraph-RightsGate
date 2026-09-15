@@ -15,7 +15,11 @@ import type {
   TransformResult,
   Verification,
 } from './types'
-import type { RegistryImage, RightsGateExecutionReceipt } from '../rightsgate/types'
+import type {
+  CMSDecisionReceipt,
+  RegistryImage,
+  RightsGateExecutionReceipt,
+} from '../rightsgate/types'
 
 const API = '/api/v1'
 
@@ -149,4 +153,22 @@ export const api = {
       body: form,
     })
   },
+  createRightsGateCmsDecision: (payload: {
+    cmsSystemId: string
+    contentId: string
+    assessmentIdempotencyKey: string
+    expectedAssetSha256: string
+    expectedAssessmentSha256: string
+  }) => request<CMSDecisionReceipt>('/rightsgate/integrations/cms/decision', {
+    method: 'POST',
+    body: JSON.stringify({
+      schema: 'veilgraph.rightsgate.cms-decision-request.v1',
+      cms_system_id: payload.cmsSystemId,
+      content_id: payload.contentId,
+      assessment_idempotency_key: payload.assessmentIdempotencyKey,
+      expected_asset_sha256: payload.expectedAssetSha256,
+      expected_assessment_sha256: payload.expectedAssessmentSha256,
+      requested_action: 'REQUEST_PUBLICATION',
+    }),
+  }),
 }

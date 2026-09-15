@@ -6,17 +6,17 @@
 
 **VeilGraph RightsGate — Evidence-First Trust Gateway for AI Media**
 
-## Draft (276 words)
+## Draft (293 words)
 
 VeilGraph RightsGate is a local-first pre-publication trust gateway that converts each media asset into an inspectable Asset Exposure Graph rather than returning one opaque detector score. It extends VeilGraph’s tested privacy, policy and evidence foundations into three coordinated dimensions: provenance, rights exposure and deployment readiness.
 
-The current image prototype validates embedded C2PA Content Credentials offline and distinguishes recognized whole/partial AI declarations, cryptographic mismatches and unknown provenance. Missing credentials remain unknown rather than becoming evidence of human authorship. A governed reference registry then performs exact-byte and perceptual candidate retrieval. Every match is bound to the assessed bytes, registry version, threshold and source record, and is treated as review evidence—not an infringement judgment.
+The image prototype validates embedded C2PA Content Credentials offline and distinguishes recognized whole/partial AI declarations, cryptographic mismatches and unknown provenance. An independent lane also inspects bounded generator metadata and localizes pixel-residual inconsistencies. Missing credentials or metadata remain unknown rather than becoming evidence of human authorship, and residual anomalies remain non-attributive review signals.
 
-For each retrieved candidate, a separate licence evaluator checks status, validity dates, territory, channel and intended use. A versioned policy compiler applies audience, brand-profile and regional rules, preserves unavailable mandatory detectors, and deterministically returns GO, REVIEW or BLOCK. The integrated workflow stores idempotent assessment records, rejects changed inputs under a reused key, verifies stored commitments on replay and presents per-dimension confidence, claims, evidence, component health and policy citations. Caller-supplied policy cannot authorize publication; release authorization remains locked.
+A governed registry performs exact-byte and perceptual retrieval and uses ORB/RANSAC geometry to localize registered works or marks inside a larger image. Every candidate is bound to the asset bytes, registry version, threshold and source record, and remains evidence—not an infringement judgment. A separate licence evaluator checks status, dates, territory, channel and intended use.
 
-The next competition phase adds independent AI-media forensics, general watermark-tampering analysis, localized logo/trademark detection and consented likeness/voice comparison, followed by an administered signed release boundary and CMS webhook.
+A versioned policy compiler applies audience, brand, regional and configurable regulatory rules before returning GO, REVIEW or BLOCK. The durable workflow rejects changed inputs under a reused idempotency key, verifies stored commitments on replay and presents confidence, claims, evidence, component health and citations. It then creates an Ed25519-signed CMS decision receipt bound to the content, asset, assessment and execution commitments. Caller-supplied policy never authorizes publication; release remains locked behind a separate administered boundary.
 
-Evaluation will freeze a declared set of licensed, public-domain, synthetic and adversarially transformed assets before metrics are calculated. We will report accuracy, false-positive rate, abstention, unauthorized-GO rate, latency and reviewer effort for each dimension, with metadata-only, C2PA-only, watermark-only and single-detector baselines. This provides measurable evidence that RightsGate goes beyond provenance standards alone while keeping confidential media on the organization’s device.
+Two frozen, byte-fingerprinted synthetic sanity sets make current claims reproducible. The 32-case global retrieval set shows perceptual matching improves exact-only recall from 0.50 to 1.00 at 0.00 false-positive rate. A separate 64-case set reports 1.00 accuracy and 0.00 false-positive rate for governed-reference localization and self-declared generator-metadata recognition. These numbers are explicitly synthetic, not open-world performance claims. Representative C2PA, watermark, likeness, voice and real-media evaluation remains the next validation gate.
 
 ## Suggested keywords
 

@@ -166,6 +166,47 @@ export interface components {
       "evidence": Array<components['schemas']['EvidencePointer']>
       "assessment": components['schemas']['ProvenanceAssessment']
     }
+    "CMSDecisionPayload": {
+      "schema"?: string
+      "cms_system_id": string
+      "content_id": string
+      "assessment_idempotency_key": string
+      "assessment_id": string
+      "asset_sha256": string
+      "request_sha256": string
+      "execution_sha256": string
+      "assessment_sha256": string
+      "deployment_decision": components['schemas']['DeploymentDecision']
+      "workflow_status": components['schemas']['CMSWorkflowStatus']
+      "assessed_at": string
+      "requested_action"?: string
+      "release_authorization"?: boolean
+    }
+    "CMSDecisionReceipt": {
+      "receipt_schema"?: string
+      "payload": components['schemas']['CMSDecisionPayload']
+      "signature_algorithm"?: string
+      "signature_b64": string
+      "public_key_b64": string
+      "signer_fingerprint": string
+      "receipt_sha256": string
+    }
+    "CMSDecisionRequest": {
+      "schema"?: string
+      "cms_system_id": string
+      "content_id": string
+      "assessment_idempotency_key": string
+      "expected_asset_sha256": string
+      "expected_assessment_sha256": string
+      "requested_action"?: string
+    }
+    "CMSReceiptVerification": {
+      "verification_schema"?: string
+      "receipt_sha256": string
+      "valid": boolean
+      "release_authorization"?: boolean
+    }
+    "CMSWorkflowStatus": "BLOCKED" | "HUMAN_REVIEW_REQUIRED" | "READY_FOR_RELEASE_AUTHORIZATION"
     "CanonicalEntityResponse": {
       "id": string
       "job_id": string
@@ -410,6 +451,14 @@ export interface components {
     "HTTPValidationError": {
       "detail"?: Array<components['schemas']['ValidationError']>
     }
+    "ImageFeatureManifest": {
+      "extractor"?: string
+      "image_width": number
+      "image_height": number
+      "keypoints": Array<Array<unknown>>
+      "descriptor_size"?: number
+      "descriptors_b64": string
+    }
     "JobCreate": {
       "purpose": string
       "recipient": string
@@ -500,6 +549,7 @@ export interface components {
       "dhash": string
       "media_type": string
       "source_record_id": string
+      "feature_manifest"?: components['schemas']['ImageFeatureManifest'] | null
     }
     "RepresentationKind": "ORIGINAL" | "VISUAL_FRAME" | "AUDIO_TRACK" | "TEXT_TRACK" | "THUMBNAIL"
     "RequestValidationReceipt": {

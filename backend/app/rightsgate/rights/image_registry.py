@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import io
 import json
 from enum import Enum
 from typing import Any, Literal
 
+import cv2
+import numpy as np
 from PIL import Image, ImageOps, UnidentifiedImageError
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from ..contracts import (
     AssessmentState,
@@ -32,15 +35,52 @@ from ..contracts import (
 
 REGISTRY_SCHEMA = "veilgraph.rightsgate.rights-reference-registry.v1"
 COMPONENT_ID = "rights.local-image-registry"
-COMPONENT_VERSION = "1.0.0"
+COMPONENT_VERSION = "1.1.0"
 COMPONENT_TYPE = "rights.reference-retriever"
 DHASH_PATTERN = r"^[0-9a-f]{16}$"
 DEFAULT_MAX_PIXELS = 40_000_000
+FEATURE_EXTRACTOR = "opencv.orb.v1"
+MAX_FEATURES = 384
+MIN_FEATURE_SIDE = 96
 
 
 class ReferenceKind(str, Enum):
     COPYRIGHTED_WORK = "COPYRIGHTED_WORK"
     TRADEMARK = "TRADEMARK"
+
+
+class ImageFeatureManifest(StrictFrozenModel):
+    """Bounded local features that permit region localization without raw references."""
+
+    extractor: Literal[FEATURE_EXTRACTOR] = FEATURE_EXTRACTOR
+    image_width: int = Field(gt=0)
+    image_height: int = Field(gt=0)
+    keypoints: tuple[tuple[float, float], ...] = Field(min_length=4, max_length=MAX_FEATURES)
+    descriptor_size: Literal[32] = 32
+    descriptors_b64: str = Field(min_length=1, max_length=MAX_FEATURES * 44)
+
+    @field_validator("keypoints")
+    @classmethod
+    def normalized_keypoints(
+        cls,
+        values: tuple[tuple[float, float], ...],
+    ) -> tuple[tuple[float, float], ...]:
+        if any(not 0 <= coordinate <= 1 for point in values for coordinate in point):
+            raise ValueError("feature keypoints must use normalized coordinates")
+        return values
+
+    @model_validator(mode="after")
+    def descriptors_match_keypoints(self) -> ImageFeatureManifest:
+        try:
+            raw = base64.b64decode(self.descriptors_b64, validate=True)
+        except ValueError as error:
+            raise ValueError("feature descriptors must be canonical base64") from error
+        expected = len(self.keypoints) * self.descriptor_size
+        if len(raw) != expected:
+            raise ValueError("feature descriptor bytes do not match the keypoint count")
+        if base64.b64encode(raw).decode("ascii") != self.descriptors_b64:
+            raise ValueError("feature descriptors must use canonical base64 encoding")
+        return self
 
 
 class RegistryImage(StrictFrozenModel):
@@ -52,6 +92,7 @@ class RegistryImage(StrictFrozenModel):
     dhash: str = Field(pattern=DHASH_PATTERN)
     media_type: str = Field(min_length=1, max_length=100)
     source_record_id: str = Field(pattern=ID_PATTERN)
+    feature_manifest: ImageFeatureManifest | None = None
 
 
 class RightsReferenceRegistry(StrictFrozenModel):
@@ -72,7 +113,7 @@ class RightsReferenceRegistry(StrictFrozenModel):
         return self
 
     def canonical_payload(self) -> dict[str, Any]:
-        payload = self.model_dump(mode="json", by_alias=True)
+        payload = self.model_dump(mode="json", by_alias=True, exclude_none=True)
         payload["references"] = sorted(
             payload["references"], key=lambda item: item["reference_id"]
         )
@@ -122,6 +163,71 @@ def image_dhash(data: bytes, *, max_pixels: int = DEFAULT_MAX_PIXELS) -> str:
     return f"{bits:016x}"
 
 
+def image_feature_manifest(
+    data: bytes,
+    *,
+    max_pixels: int = DEFAULT_MAX_PIXELS,
+) -> ImageFeatureManifest | None:
+    """Derive deterministic, bounded ORB features for local candidate localization."""
+
+    if max_pixels < 1:
+        raise ValueError("max_pixels must be positive")
+    try:
+        with Image.open(io.BytesIO(data)) as opened:
+            width, height = opened.size
+            if width < 1 or height < 1 or width * height > max_pixels:
+                raise _ImageInspectionError("image exceeds the configured pixel budget")
+            opened.load()
+            normalized = ImageOps.exif_transpose(opened).convert("L")
+            width, height = normalized.size
+            grayscale = np.asarray(normalized, dtype=np.uint8)
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as error:
+        raise _ImageInspectionError("image could not be decoded safely") from error
+
+    if min(width, height) < MIN_FEATURE_SIDE:
+        return None
+
+    detector = cv2.ORB_create(
+        nfeatures=MAX_FEATURES,
+        scaleFactor=1.2,
+        nlevels=8,
+        edgeThreshold=15,
+        patchSize=31,
+        fastThreshold=10,
+    )
+    keypoints, descriptors = detector.detectAndCompute(grayscale, None)
+    if descriptors is None or len(keypoints) < 4:
+        return None
+
+    ordered = sorted(
+        zip(keypoints, descriptors, strict=True),
+        key=lambda item: (
+            -round(float(item[0].response), 8),
+            int(item[0].octave),
+            round(float(item[0].pt[1]), 6),
+            round(float(item[0].pt[0]), 6),
+            bytes(item[1]),
+        ),
+    )[:MAX_FEATURES]
+    points = tuple(
+        (
+            round(min(1.0, max(0.0, float(keypoint.pt[0]) / width)), 8),
+            round(min(1.0, max(0.0, float(keypoint.pt[1]) / height)), 8),
+        )
+        for keypoint, _ in ordered
+    )
+    descriptor_bytes = np.stack([descriptor for _, descriptor in ordered]).astype(
+        np.uint8,
+        copy=False,
+    )
+    return ImageFeatureManifest(
+        image_width=width,
+        image_height=height,
+        keypoints=points,
+        descriptors_b64=base64.b64encode(descriptor_bytes.tobytes()).decode("ascii"),
+    )
+
+
 def build_registry_image(
     *,
     reference_id: str,
@@ -144,6 +250,7 @@ def build_registry_image(
         dhash=image_dhash(data, max_pixels=max_pixels),
         media_type=media_type,
         source_record_id=source_record_id,
+        feature_manifest=image_feature_manifest(data, max_pixels=max_pixels),
     )
 
 

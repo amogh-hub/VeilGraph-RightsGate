@@ -1,0 +1,30 @@
+{
+  "schema": "veilgraph.rightsgate.signal-evaluation-summary.v1",
+  "dataset_id": "rightsgate.synthetic-challenge-signals-sanity.v1",
+  "manifest_sha256": "c8427a34f094614cff7fbd6966d0e7554cbbd497d9025ce36d15dcfa06a7fbff",
+  "registry_sha256": "bc312ca043ccd31c68dd452cb5d8aca1263cd87d659febf868928bb35aeaaddc",
+  "case_count": 64,
+  "visual_localization": {
+    "true_positive": 16,
+    "true_negative": 16,
+    "false_positive": 0,
+    "false_negative": 0,
+    "accuracy": 1.0,
+    "false_positive_rate": 0.0,
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "generative_metadata": {
+    "true_positive": 16,
+    "true_negative": 16,
+    "false_positive": 0,
+    "false_negative": 0,
+    "accuracy": 1.0,
+    "false_positive_rate": 0.0,
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "partial_edit_subtype_accuracy": 1.0,
+  "reproduce": "cd backend && PYTHONPATH=. python run_rightsgate_signal_eval.py",
+  "claim_boundary": "Synthetic localization and self-declared metadata-marker sanity evidence only; not representative of open-world AI, copyright, trademark, likeness or voice detection."
+}

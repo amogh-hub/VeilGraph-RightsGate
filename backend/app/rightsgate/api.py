@@ -37,6 +37,15 @@ from .execution import (
     validate_execution_asset,
     validate_governed_inputs,
 )
+from .integration import (
+    CMS_REQUEST_SCHEMA,
+    CMS_RECEIPT_SCHEMA,
+    CMSDecisionReceipt,
+    CMSDecisionRequest,
+    CMSReceiptVerification,
+    build_cms_decision_receipt,
+    verify_cms_decision_receipt,
+)
 from .policy import POLICY_SCHEMA, PublicationPolicy
 from .provenance import C2PAVerificationResult, verify_c2pa
 from .rights import (
@@ -125,7 +134,7 @@ class AssessmentRecordResponse(StrictFrozenModel):
 
 @router.get("/contracts", response_model=ContractBundleResponse)
 def get_contracts() -> ContractBundleResponse:
-    """Return canonical JSON Schemas for the implemented Gate 1 boundary."""
+    """Return canonical JSON Schemas for the implemented RightsGate boundary."""
 
     return ContractBundleResponse(
         schemas={
@@ -136,6 +145,8 @@ def get_contracts() -> ContractBundleResponse:
             REGISTRY_SCHEMA: RightsReferenceRegistry.model_json_schema(by_alias=True),
             LICENCE_REGISTRY_SCHEMA: LicenceRegistry.model_json_schema(by_alias=True),
             POLICY_SCHEMA: PublicationPolicy.model_json_schema(by_alias=True),
+            CMS_REQUEST_SCHEMA: CMSDecisionRequest.model_json_schema(by_alias=True),
+            CMS_RECEIPT_SCHEMA: CMSDecisionReceipt.model_json_schema(by_alias=True),
         }
     )
 
@@ -403,4 +414,40 @@ def get_assessment_record(idempotency_key: str) -> AssessmentRecordResponse:
         assessment_sha256=record.assessment_sha256,
         failure_code=record.failure_code,
         assessment=record.assessment,
+    )
+
+
+@router.post("/integrations/cms/decision", response_model=CMSDecisionReceipt)
+def create_cms_decision_receipt(payload: CMSDecisionRequest) -> CMSDecisionReceipt:
+    """Return a signed CMS workflow decision for a completed immutable assessment."""
+
+    try:
+        record = assessment_store.get(payload.assessment_idempotency_key)
+    except StoredAssessmentIntegrityError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    if record is None:
+        raise HTTPException(status_code=404, detail="assessment record not found")
+    if record.state != ReservationState.REPLAY or record.assessment is None:
+        raise HTTPException(status_code=409, detail="assessment is not complete")
+    if record.assessment_sha256 is None:
+        raise HTTPException(status_code=500, detail="stored assessment commitment is absent")
+    try:
+        return build_cms_decision_receipt(
+            payload,
+            assessment=record.assessment,
+            request_sha256=record.request_sha256,
+            execution_sha256=record.execution_sha256,
+            assessment_sha256=record.assessment_sha256,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/integrations/cms/receipts/verify", response_model=CMSReceiptVerification)
+def verify_cms_receipt(payload: CMSDecisionReceipt) -> CMSReceiptVerification:
+    """Verify a CMS receipt without converting it into release authorization."""
+
+    return CMSReceiptVerification(
+        receipt_sha256=payload.receipt_sha256,
+        valid=verify_cms_decision_receipt(payload),
     )

@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="VEILGRAPH_", extra="ignore")
 
     app_name: str = "VeilGraph RightsGate"
-    version: str = "0.2.0-rightsgate-prototype"
+    version: str = "0.3.0-rightsgate-prototype"
     offline_mode: bool = True
     bind_host: str = "127.0.0.1"
     bind_port: int = 8000

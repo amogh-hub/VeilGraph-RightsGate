@@ -40,7 +40,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 2 — Build the provenance lane
 
-**Status:** IN PROGRESS — offline C2PA verification and conservative IPTC generative-source mapping are implemented with bounded unit/integration tests. Signed fixture, attack-matrix, trust-store and forensic-adapter work remains before exit.
+**Status:** IN PROGRESS — offline C2PA verification, conservative IPTC mapping, bounded generator-metadata inspection and localized non-attributive residual triage are implemented. Signed fixtures, representative calibration, watermark attacks and video/audio adapters remain before exit.
 
 - Verify C2PA credentials and bind them to the exact asset bytes.
 - Inspect declared provenance metadata and supported invisible-watermark signals.
@@ -53,7 +53,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 3 — Build the rights lane
 
-**Status:** IN PROGRESS — a versioned local image-reference registry, server-derived records, exact/perceptual candidate retrieval and deterministic licence status/date/territory/channel/intended-use evaluation are implemented. Consent, likeness, voice, localization, broader licence semantics and benchmark work remain before exit.
+**Status:** IN PROGRESS — a versioned local image-reference registry, exact/perceptual retrieval, ORB/RANSAC region localization and deterministic licence status/date/territory/channel/intended-use evaluation are implemented. Consent, likeness, voice, open-world semantics and representative benchmark work remain before exit.
 
 - Create a governed reference registry with works, logos, licences, consent and territory.
 - Add perceptual and embedding-based candidate retrieval for image, video and audio.
@@ -66,7 +66,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 4 — Compile policy and control release
 
-**Status:** IN PROGRESS — deterministic audience, brand-profile, channel, territory, provenance, rights and mandatory-component rules now produce evidence-cited `GO`/`REVIEW`/`BLOCK` assessments. Administered policy trust, human overrides, webhooks, adversarial release verification and signed authorization remain.
+**Status:** IN PROGRESS — deterministic audience, brand-profile, channel, territory, scoped regulatory, provenance, rights and mandatory-component rules produce evidence-cited `GO`/`REVIEW`/`BLOCK`. Signed CMS decision receipts are implemented. Administered policy trust, human overrides, authenticated delivery, adversarial release verification and signed authorization remain.
 
 - Extend the versioned policy compiler for brand, regulatory, territory and intended-use rules.
 - Produce deterministic `GO`, `REVIEW` or `BLOCK` outcomes with cited rules.
@@ -79,13 +79,13 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 5 — Evaluate and demonstrate
 
-**Status:** IN PROGRESS — a dedicated RightsGate review screen now runs the integrated image workflow and exposes all three dimensions, evidence, component health and commitments. A frozen 32-case synthetic rights-retrieval sanity set provides exact-only ablation metrics, but representative multi-dimension evaluation, CMS simulation and rehearsed demo cases remain.
+**Status:** IN PROGRESS — the RightsGate screen runs the integrated image workflow, exposes all three dimensions and produces a signed CMS workflow receipt. Frozen 32-case retrieval and 64-case localization/metadata-signal sets provide bounded accuracy/FPR evidence, but representative multi-dimension evaluation and rehearsed demo cases remain.
 
 - Build a legally sourced, versioned dataset and freeze train, validation and test families.
 - Compare metadata-only, C2PA-only, watermark-only and individual-detector baselines.
 - Report accuracy, false-positive rate, calibration, abstention and unauthorized-`GO` rate.
 - Measure latency, reviewer effort and failure behavior.
-- Build a review workflow and simulated CMS integration.
+- Extend the implemented review workflow and signed CMS contract with authenticated vendor delivery.
 - Prepare a three-minute demo covering clean, ambiguous, infringing and tampered cases.
 
 **Exit:** every public metric is reproducible from a signed evaluation manifest.

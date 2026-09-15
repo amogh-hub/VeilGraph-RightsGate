@@ -49,7 +49,7 @@
 
   <g transform="translate(122 416)">
     <rect width="396" height="210" rx="24" fill="#172554" stroke="#6366f1" stroke-width="2"/>
-    <rect x="22" y="22" width="144" height="29" rx="14" fill="#a78bfa"/><text x="94" y="42" text-anchor="middle" class="label">PROPOSED LANE 1</text>
+    <rect x="22" y="22" width="174" height="29" rx="14" fill="#a78bfa"/><text x="109" y="42" text-anchor="middle" class="label">IMAGE · IMPLEMENTED</text>
     <text x="22" y="88" class="cardTitle">Provenance</text>
     <text x="22" y="121" class="body">C2PA + metadata continuity</text>
     <text x="22" y="150" class="body">Watermark and tamper forensics</text>
@@ -58,7 +58,7 @@
 
   <g transform="translate(602 416)">
     <rect width="396" height="210" rx="24" fill="#173047" stroke="#22d3ee" stroke-width="2"/>
-    <rect x="22" y="22" width="144" height="29" rx="14" fill="#67e8f9"/><text x="94" y="42" text-anchor="middle" class="label">PROPOSED LANE 2</text>
+    <rect x="22" y="22" width="174" height="29" rx="14" fill="#67e8f9"/><text x="109" y="42" text-anchor="middle" class="label">IMAGE · IMPLEMENTED</text>
     <text x="22" y="88" class="cardTitle">Rights exposure</text>
     <text x="22" y="121" class="body">Copyright similarity + trademarks</text>
     <text x="22" y="150" class="body">Consented likeness / voice registry</text>
@@ -85,8 +85,8 @@
   </g>
 
   <g transform="translate(82 788)">
-    <text x="0" y="25" class="kicker">SIGNED RELEASE DECISION</text>
-    <text x="0" y="57" class="small">Local-first • source-level evidence • versioned policy • SHA-256 + Ed25519 proof</text>
+    <text x="0" y="25" class="kicker">SIGNED WORKFLOW DECISION</text>
+    <text x="0" y="57" class="small">Local-first • source-level evidence • versioned policy • non-authorizing Ed25519 receipt</text>
   </g>
 
   <g transform="translate(1116 788)">

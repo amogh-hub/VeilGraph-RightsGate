@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from enum import Enum
 from typing import Any, Literal
 
 from pydantic import Field, field_validator, model_validator
@@ -34,8 +35,52 @@ from .rights.licensing import LicenceEvaluationResult
 
 POLICY_SCHEMA = "veilgraph.rightsgate.publication-policy.v1"
 COMPONENT_ID = "deployment.policy-compiler"
-COMPONENT_VERSION = "1.0.0"
+COMPONENT_VERSION = "1.1.0"
 COMPONENT_TYPE = "deployment.deterministic-policy"
+
+
+class RegulatoryRuleEffect(str, Enum):
+    REVIEW = "REVIEW"
+    BLOCK = "BLOCK"
+
+
+class RegulatoryRule(StrictFrozenModel):
+    """A deterministic context/verdict rule supplied by a governed policy owner."""
+
+    rule_id: str = Field(pattern=ID_PATTERN)
+    description: str = Field(min_length=1, max_length=500)
+    effect: RegulatoryRuleEffect
+    territories: tuple[str, ...] = ("*",)
+    channels: tuple[str, ...] = ("*",)
+    audiences: tuple[str, ...] = ("*",)
+    brand_profiles: tuple[str, ...] = ("*",)
+    provenance_verdicts: tuple[ProvenanceVerdict, ...] = ()
+    rights_verdicts: tuple[RightsVerdict, ...] = ()
+
+    @field_validator("channels", "audiences", "brand_profiles")
+    @classmethod
+    def normalize_casefolded_values(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        normalized = tuple(sorted({value.strip().casefold() for value in values if value.strip()}))
+        if not normalized:
+            raise ValueError("regulatory rule value sets cannot be empty")
+        return normalized
+
+    @field_validator("territories")
+    @classmethod
+    def normalize_territories(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        normalized = tuple(sorted({value.strip().upper() for value in values if value.strip()}))
+        if not normalized or any(
+            value != "*" and (len(value) != 2 or not value.isalpha()) for value in normalized
+        ):
+            raise ValueError("regulatory rule territories must contain '*' or two-letter codes")
+        return normalized
+
+    @field_validator("provenance_verdicts", "rights_verdicts")
+    @classmethod
+    def normalize_verdicts(cls, values: tuple[Enum, ...]) -> tuple[Enum, ...]:
+        if len(values) != len(set(values)):
+            raise ValueError("regulatory rule verdict filters must be unique")
+        return tuple(sorted(values, key=lambda value: value.value))
 
 
 class PublicationPolicy(StrictFrozenModel):
@@ -55,6 +100,7 @@ class PublicationPolicy(StrictFrozenModel):
     require_rights_clearance: bool = True
     block_tampered_provenance: bool = True
     block_unlicensed_reference_match: bool = True
+    regulatory_rules: tuple[RegulatoryRule, ...] = ()
 
     @field_validator("allowed_channels", "allowed_audiences", "allowed_brand_profiles")
     @classmethod
@@ -78,6 +124,17 @@ class PublicationPolicy(StrictFrozenModel):
         if len(values) != len(set(values)):
             raise ValueError("required_component_ids must be unique")
         return tuple(sorted(values))
+
+    @field_validator("regulatory_rules")
+    @classmethod
+    def normalize_regulatory_rules(
+        cls,
+        values: tuple[RegulatoryRule, ...],
+    ) -> tuple[RegulatoryRule, ...]:
+        rule_ids = [value.rule_id for value in values]
+        if len(rule_ids) != len(set(rule_ids)):
+            raise ValueError("regulatory rule_id values must be unique")
+        return tuple(sorted(values, key=lambda value: value.rule_id))
 
     @model_validator(mode="after")
     def policy_requires_real_controls(self) -> PublicationPolicy:
@@ -113,6 +170,26 @@ def _canonical_hash(payload: dict[str, Any]) -> str:
 
 def _allowed(value: str, configured: tuple[str, ...]) -> bool:
     return "*" in configured or value.casefold() in configured
+
+
+def _regulatory_rule_matches(
+    rule: RegulatoryRule,
+    *,
+    context: AssessmentContext,
+    provenance: ProvenanceAssessment,
+    rights: RightsAssessment,
+) -> bool:
+    if not _allowed(context.channel, rule.channels):
+        return False
+    if not _allowed(context.audience, rule.audiences):
+        return False
+    if not _allowed(context.brand_profile or "", rule.brand_profiles):
+        return False
+    if "*" not in rule.territories and not set(context.territories).intersection(rule.territories):
+        return False
+    if rule.provenance_verdicts and provenance.verdict not in rule.provenance_verdicts:
+        return False
+    return not rule.rights_verdicts or rights.verdict in rule.rights_verdicts
 
 
 def evaluate_publication_policy(
@@ -210,6 +287,20 @@ def evaluate_publication_policy(
         review_reasons.append(
             ("rights.complete", "The rights assessment is incomplete or unavailable.")
         )
+
+    for rule in policy.regulatory_rules:
+        if not _regulatory_rule_matches(
+            rule,
+            context=context,
+            provenance=provenance,
+            rights=rights,
+        ):
+            continue
+        reason = (f"regulatory.{rule.rule_id}", rule.description)
+        if rule.effect == RegulatoryRuleEffect.BLOCK:
+            block_reasons.append(reason)
+        else:
+            review_reasons.append(reason)
 
     # Deduplicate while retaining deterministic citation/reason ordering.
     block_reasons = sorted(set(block_reasons))

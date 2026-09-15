@@ -60,6 +60,7 @@ Release authority belongs only to administered deterministic policy and verifica
 - completed assessment JSON is revalidated and recomputed against its stored commitment on replay;
 - raw assessment and reference media is processed in memory and is not stored in the RightsGate assessment table;
 - caller-supplied governance documents can produce decision support but always return `release_authorization: false`.
+- CMS decision receipts bind content, asset, request, execution and assessment commitments; Ed25519 verification detects payload, key or signature substitution, while the receipt remains explicitly non-authorizing.
 
 ## Non-goals
 

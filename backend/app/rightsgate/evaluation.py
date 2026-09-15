@@ -9,6 +9,7 @@ from pydantic import Field
 from .contracts import SHA256_PATTERN, StrictFrozenModel
 
 EVALUATION_REPORT_SCHEMA = "veilgraph.rightsgate.evaluation-report.v1"
+SIGNAL_EVALUATION_REPORT_SCHEMA = "veilgraph.rightsgate.signal-evaluation-report.v1"
 
 
 class BinaryClassificationMetrics(StrictFrozenModel):
@@ -43,6 +44,31 @@ class RightsRetrievalEvaluationReport(StrictFrozenModel):
     exact_only: BinaryClassificationMetrics
     perceptual: BinaryClassificationMetrics
     cases: tuple[EvaluationCaseResult, ...]
+    limitations: tuple[str, ...]
+
+
+class SignalEvaluationCaseResult(StrictFrozenModel):
+    case_id: str
+    lane: Literal["visual_localization", "generative_metadata"]
+    expected_label: str
+    predicted_label: str
+    asset_sha256: str = Field(pattern=SHA256_PATTERN)
+    correct: bool
+
+
+class ChallengeSignalEvaluationReport(StrictFrozenModel):
+    schema_id: Literal[SIGNAL_EVALUATION_REPORT_SCHEMA] = Field(
+        default=SIGNAL_EVALUATION_REPORT_SCHEMA,
+        alias="schema",
+        serialization_alias="schema",
+    )
+    dataset_id: str
+    manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    registry_sha256: str = Field(pattern=SHA256_PATTERN)
+    visual_localization: BinaryClassificationMetrics
+    generative_metadata: BinaryClassificationMetrics
+    partial_edit_subtype_accuracy: float = Field(ge=0, le=1)
+    cases: tuple[SignalEvaluationCaseResult, ...]
     limitations: tuple[str, ...]
 
 

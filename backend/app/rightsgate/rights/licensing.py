@@ -141,10 +141,13 @@ def _component(registry_sha256: str) -> ComponentRecord:
     )
 
 
-def _candidate_reference_ids(match: RightsImageMatchResult) -> tuple[str, ...]:
+def _candidate_reference_ids(
+    match: RightsImageMatchResult,
+    additional_evidence: tuple[EvidencePointer, ...],
+) -> tuple[str, ...]:
     values = {
         str(item.attributes["reference_id"])
-        for item in match.evidence
+        for item in match.evidence + additional_evidence
         if item.kind == EvidenceKind.REFERENCE_MATCH
         and item.polarity == EvidencePolarity.SUPPORTS
         and item.attributes.get("reference_id")
@@ -184,13 +187,14 @@ def evaluate_candidate_licences(
     context: AssessmentContext,
     registry: LicenceRegistry,
     assessed_at: datetime,
+    additional_evidence: tuple[EvidencePointer, ...] = (),
 ) -> LicenceEvaluationResult:
     """Evaluate explicit licences for retrieved candidates without implying legal advice."""
 
     if assessed_at.tzinfo is None or assessed_at.utcoffset() is None:
         raise ValueError("assessed_at must be timezone-aware")
     registry_sha256 = registry.commitment_sha256()
-    candidates = _candidate_reference_ids(match)
+    candidates = _candidate_reference_ids(match, additional_evidence)
     if not candidates:
         limitation = "No governed reference candidate was available for licence evaluation."
         return LicenceEvaluationResult(

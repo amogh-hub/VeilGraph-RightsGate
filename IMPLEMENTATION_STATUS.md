@@ -1,6 +1,6 @@
 # RightsGate Implementation Status
 
-Status snapshot: **2026-09-14**
+Status snapshot: **2026-09-15**
 
 This document is the authoritative, claim-bounded record of the current TECHgium implementation. It distinguishes code that exists from capabilities that have been benchmark-validated or released as a complete competition prototype.
 
@@ -12,20 +12,20 @@ This document is the authoritative, claim-bounded record of the current TECHgium
 | Evidence pointers and confidence fields | ✅ Implemented |
 | Fail-closed `GO / REVIEW / BLOCK` rules | ✅ Implemented in contracts and the trusted image executor |
 | C2PA credential verification | 🟡 Implemented, not benchmark-validated |
-| Declared whole/partial AI generation | 🟡 Detected only through valid C2PA credentials containing recognized declarations |
-| Independent AI-media forensic detection | ❌ Not implemented |
-| Metadata/watermark tampering | 🟡 C2PA cryptographic mismatch supported; general metadata and watermark tampering detection missing |
+| Declared whole/partial AI generation | 🟡 Detected through valid C2PA declarations or recognized self-declared generator metadata; stripped/forged metadata remains unresolved |
+| Independent AI-media forensic detection | 🟡 Deterministic metadata and localized residual triage implemented for images; not a calibrated universal generator classifier |
+| Metadata/watermark tampering | 🟡 C2PA cryptographic mismatch and non-attributive residual anomaly evidence supported; general invisible-watermark tampering remains missing |
 | Copyrighted-image candidate matching | 🟡 Exact/perceptual local-registry baseline implemented; results are candidates, not legal conclusions or clearance |
-| Trademark/logo localization | ❌ Not implemented |
+| Trademark/logo localization | 🟡 Governed local ORB/RANSAC reference localization implemented with region evidence; open-world semantic detection is not implemented |
 | Licence validity and restrictions | 🟡 Status, validity window, territory, channel and intended-use checks implemented for governed image candidates; broader contract semantics missing |
 | Likeness detection | ❌ Not implemented |
 | Voice detection | ❌ Not implemented |
-| Brand/regulatory/regional policy execution | 🟡 Audience, brand-profile, channel and regional territory rules implemented; jurisdiction-specific regulatory packs missing |
-| End-to-end three-dimension orchestration | 🟡 Implemented for the current image scope with durable idempotency; video/audio and missing detector lanes remain |
-| RightsGate review UI/CMS integration | 🟡 Dedicated review UI implemented; authenticated CMS/webhook integration missing |
+| Brand/regulatory/regional policy execution | 🟡 Audience, brand-profile, channel, territory and scoped `REVIEW`/`BLOCK` regulatory rules implemented; curated jurisdiction-specific packs missing |
+| End-to-end three-dimension orchestration | ✅ Implemented for the current image scope with durable idempotency and explicit abstention; video/audio lanes remain |
+| RightsGate review UI/CMS integration | 🟡 Dedicated review UI and signed non-authorizing CMS decision contract implemented; authenticated vendor webhook missing |
 | Image, video and audio coverage | ❌ Current challenge-specific implementation is mainly image-focused |
-| Declared frozen test set | 🟡 A 32-case synthetic rights-retrieval sanity manifest is frozen; representative provenance/rights/policy sets are missing |
-| Accuracy and false-positive rates | 🟡 Reproducible synthetic retrieval sanity metrics exist; challenge-wide or real-world accuracy/FPR cannot be claimed |
+| Declared frozen test set | 🟡 A 32-case retrieval set and 64-case localization/metadata-signal set are frozen; representative real-world provenance/rights/policy sets are missing |
+| Accuracy and false-positive rates | 🟡 Reproducible synthetic metrics report accuracy/FPR for three bounded lanes; challenge-wide or real-world accuracy/FPR cannot be claimed |
 | Comparison against C2PA/watermark-only baselines | ❌ Not completed |
 | Signed competition release and demo | ❌ Not completed |
 
@@ -35,14 +35,17 @@ This document is the authoritative, claim-bounded record of the current TECHgium
 - RightsGate has strict versioned assessment, evidence, claim, graph and decision contracts with automated invariant tests.
 - The C2PA adapter uses the official CAI SDK in local-only mode and fails closed when verification is unavailable or inconclusive.
 - The image rights-reference adapter provides governed, content-addressed exact and perceptual candidate retrieval and never converts absence of a match into rights clearance.
+- The independent image triage lane recognizes bounded generator metadata and produces localized high-pass residual anomalies without treating them as universal AI attribution. Missing markers remain `UNKNOWN`.
+- Governed reference records include bounded ORB features. RANSAC geometric verification can localize a reference inside a larger image and emits a region evidence pointer; no-match still is not clearance.
 - The image executor binds exact asset bytes, both governed registry commitments, policy, retrieval threshold and executor version; it persists idempotent results under recoverable leases and verifies stored commitments on read.
 - Licence evaluation covers explicit status, date, territory, channel and intended use. The policy compiler makes evidence-cited decisions while preserving unavailable mandatory detectors.
 - The RightsGate review screen runs this integrated workflow and displays all three dimensions, evidence, component health and policy citations.
-- A frozen 32-case deterministic synthetic rights-retrieval sanity set records byte hashes and compares exact-only with perceptual matching under an explicit non-generalization boundary.
+- The policy supports deterministic, context-scoped regulatory `REVIEW` and `BLOCK` rules. The UI converts immutable results into deterministic Ed25519-signed CMS workflow receipts; every receipt retains `release_authorization: false`.
+- Frozen 32-case retrieval and 64-case signal manifests record every generated byte hash. Synthetic localization and metadata-signal lanes each reproduce 16 TP, 16 TN, 0 FP and 0 FN under an explicit non-generalization boundary.
 - The published foundation passed the backend suite, Python and npm dependency audits, frontend type checking and frontend production build in CI.
 
 ## Claim boundary
 
-This snapshot is a **validated engineering foundation with implemented image orchestration, C2PA, image-reference retrieval, scoped licence evaluation, deterministic policy and review UI**. It is not a completed solution to every challenge requirement and must not be represented as having benchmark accuracy, false-positive rates, general AI-forensics coverage, legal rights clearance or production release authorization.
+This snapshot is a **validated engineering foundation with implemented image orchestration, C2PA, conservative forensic triage, global and localized reference retrieval, scoped licence evaluation, deterministic policy, review UI and signed CMS decision receipts**. It is not a completed solution to every challenge requirement and must not be represented as having real-world benchmark accuracy, general AI-forensics coverage, legal rights clearance or production release authorization.
 
 The detailed evidence-to-requirement map remains in [`TECHGIUM_TRACEABILITY.md`](TECHGIUM_TRACEABILITY.md), and remaining implementation gates remain in [`ENGINEERING_PLAN.md`](ENGINEERING_PLAN.md).

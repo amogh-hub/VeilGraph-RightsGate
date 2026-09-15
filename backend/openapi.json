@@ -3,7 +3,7 @@
   "info": {
     "title": "VeilGraph RightsGate",
     "description": "Evidence-first pre-publication media trust gateway derived from VeilGraph. The API exposes the inherited privacy foundation plus versioned RightsGate contracts, offline C2PA inspection, governed image retrieval, licence evaluation, deterministic policy and durable non-authorizing image assessments.",
-    "version": "0.2.0-rightsgate-prototype"
+    "version": "0.3.0-rightsgate-prototype"
   },
   "paths": {
     "/api/v1/status": {
@@ -1178,7 +1178,7 @@
           "RightsGate"
         ],
         "summary": "Get Contracts",
-        "description": "Return canonical JSON Schemas for the implemented Gate 1 boundary.",
+        "description": "Return canonical JSON Schemas for the implemented RightsGate boundary.",
         "operationId": "get_contracts_api_v1_rightsgate_contracts_get",
         "responses": {
           "200": {
@@ -1430,6 +1430,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AssessmentRecordResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rightsgate/integrations/cms/decision": {
+      "post": {
+        "tags": [
+          "RightsGate"
+        ],
+        "summary": "Create Cms Decision Receipt",
+        "description": "Return a signed CMS workflow decision for a completed immutable assessment.",
+        "operationId": "create_cms_decision_receipt_api_v1_rightsgate_integrations_cms_decision_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CMSDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CMSDecisionReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rightsgate/integrations/cms/receipts/verify": {
+      "post": {
+        "tags": [
+          "RightsGate"
+        ],
+        "summary": "Verify Cms Receipt",
+        "description": "Verify a CMS receipt without converting it into release authorization.",
+        "operationId": "verify_cms_receipt_api_v1_rightsgate_integrations_cms_receipts_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CMSDecisionReceipt"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CMSReceiptVerification"
                 }
               }
             }
@@ -2414,6 +2498,238 @@
           "assessment"
         ],
         "title": "C2PAVerificationResult"
+      },
+      "CMSDecisionPayload": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.cms-decision-payload.v1",
+            "title": "Schema",
+            "default": "veilgraph.rightsgate.cms-decision-payload.v1"
+          },
+          "cms_system_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Cms System Id"
+          },
+          "content_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Content Id"
+          },
+          "assessment_idempotency_key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Assessment Idempotency Key"
+          },
+          "assessment_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Assessment Id"
+          },
+          "asset_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Asset Sha256"
+          },
+          "request_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Request Sha256"
+          },
+          "execution_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Execution Sha256"
+          },
+          "assessment_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Assessment Sha256"
+          },
+          "deployment_decision": {
+            "$ref": "#/components/schemas/DeploymentDecision"
+          },
+          "workflow_status": {
+            "$ref": "#/components/schemas/CMSWorkflowStatus"
+          },
+          "assessed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Assessed At"
+          },
+          "requested_action": {
+            "type": "string",
+            "const": "REQUEST_PUBLICATION",
+            "title": "Requested Action",
+            "default": "REQUEST_PUBLICATION"
+          },
+          "release_authorization": {
+            "type": "boolean",
+            "const": false,
+            "title": "Release Authorization",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cms_system_id",
+          "content_id",
+          "assessment_idempotency_key",
+          "assessment_id",
+          "asset_sha256",
+          "request_sha256",
+          "execution_sha256",
+          "assessment_sha256",
+          "deployment_decision",
+          "workflow_status",
+          "assessed_at"
+        ],
+        "title": "CMSDecisionPayload"
+      },
+      "CMSDecisionReceipt": {
+        "properties": {
+          "receipt_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.cms-decision-receipt.v1",
+            "title": "Receipt Schema",
+            "default": "veilgraph.rightsgate.cms-decision-receipt.v1"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/CMSDecisionPayload"
+          },
+          "signature_algorithm": {
+            "type": "string",
+            "const": "Ed25519",
+            "title": "Signature Algorithm",
+            "default": "Ed25519"
+          },
+          "signature_b64": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Signature B64"
+          },
+          "public_key_b64": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Public Key B64"
+          },
+          "signer_fingerprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Signer Fingerprint"
+          },
+          "receipt_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Receipt Sha256"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "payload",
+          "signature_b64",
+          "public_key_b64",
+          "signer_fingerprint",
+          "receipt_sha256"
+        ],
+        "title": "CMSDecisionReceipt"
+      },
+      "CMSDecisionRequest": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.cms-decision-request.v1",
+            "title": "Schema",
+            "default": "veilgraph.rightsgate.cms-decision-request.v1"
+          },
+          "cms_system_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Cms System Id"
+          },
+          "content_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Content Id"
+          },
+          "assessment_idempotency_key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Assessment Idempotency Key"
+          },
+          "expected_asset_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Expected Asset Sha256"
+          },
+          "expected_assessment_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Expected Assessment Sha256"
+          },
+          "requested_action": {
+            "type": "string",
+            "const": "REQUEST_PUBLICATION",
+            "title": "Requested Action",
+            "default": "REQUEST_PUBLICATION"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cms_system_id",
+          "content_id",
+          "assessment_idempotency_key",
+          "expected_asset_sha256",
+          "expected_assessment_sha256"
+        ],
+        "title": "CMSDecisionRequest"
+      },
+      "CMSReceiptVerification": {
+        "properties": {
+          "verification_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.cms-receipt-verification.v1",
+            "title": "Verification Schema",
+            "default": "veilgraph.rightsgate.cms-receipt-verification.v1"
+          },
+          "receipt_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Receipt Sha256"
+          },
+          "valid": {
+            "type": "boolean",
+            "title": "Valid"
+          },
+          "release_authorization": {
+            "type": "boolean",
+            "const": false,
+            "title": "Release Authorization",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "receipt_sha256",
+          "valid"
+        ],
+        "title": "CMSReceiptVerification"
+      },
+      "CMSWorkflowStatus": {
+        "type": "string",
+        "enum": [
+          "BLOCKED",
+          "HUMAN_REVIEW_REQUIRED",
+          "READY_FOR_RELEASE_AUTHORIZATION"
+        ],
+        "title": "CMSWorkflowStatus"
       },
       "CanonicalEntityResponse": {
         "properties": {
@@ -3938,6 +4254,67 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "ImageFeatureManifest": {
+        "properties": {
+          "extractor": {
+            "type": "string",
+            "const": "opencv.orb.v1",
+            "title": "Extractor",
+            "default": "opencv.orb.v1"
+          },
+          "image_width": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Image Width"
+          },
+          "image_height": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Image Height"
+          },
+          "keypoints": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "maxItems": 384,
+            "minItems": 4,
+            "title": "Keypoints"
+          },
+          "descriptor_size": {
+            "type": "integer",
+            "const": 32,
+            "title": "Descriptor Size",
+            "default": 32
+          },
+          "descriptors_b64": {
+            "type": "string",
+            "maxLength": 16896,
+            "minLength": 1,
+            "title": "Descriptors B64"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "image_width",
+          "image_height",
+          "keypoints",
+          "descriptors_b64"
+        ],
+        "title": "ImageFeatureManifest",
+        "description": "Bounded local features that permit region localization without raw references."
+      },
       "JobCreate": {
         "properties": {
           "purpose": {
@@ -4447,6 +4824,16 @@
             "type": "string",
             "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
             "title": "Source Record Id"
+          },
+          "feature_manifest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageFeatureManifest"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,

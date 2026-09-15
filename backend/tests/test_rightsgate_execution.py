@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import io
+import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi.testclient import TestClient
 from PIL import Image
 from pydantic import ValidationError
@@ -32,7 +36,12 @@ from app.rightsgate import (
     RightsVerdict,
 )
 from app.rightsgate.execution import execute_rightsgate_assessment, execution_fingerprint
-from app.rightsgate.policy import PublicationPolicy, evaluate_publication_policy
+from app.rightsgate.policy import (
+    PublicationPolicy,
+    RegulatoryRule,
+    RegulatoryRuleEffect,
+    evaluate_publication_policy,
+)
 from app.rightsgate.rights import (
     LicenceEvaluationResult,
     LicenceRecord,
@@ -304,14 +313,14 @@ def test_end_to_end_blocks_unlicensed_candidate_with_evidence_graph() -> None:
     assert assessment.deployment.confidence == 1
 
 
-def test_end_to_end_reviews_licensed_candidate_when_required_detectors_are_missing() -> None:
+def test_end_to_end_reviews_when_required_detector_evidence_is_incomplete() -> None:
     assessment = execute_fixture(gradient_png())
 
     assert assessment.deployment.decision == DeploymentDecision.REVIEW
     assert assessment.deployment.state == AssessmentState.PARTIAL
     states = {item.component_id: item.state for item in assessment.components}
-    assert states["provenance.independent-forensics"] == ComponentState.UNAVAILABLE
-    assert states["rights.trademark-localizer"] == ComponentState.UNAVAILABLE
+    assert states["provenance.independent-forensics"] == ComponentState.AVAILABLE
+    assert states["rights.trademark-localizer"] == ComponentState.DEGRADED
     assert assessment.rights.verdict == RightsVerdict.POTENTIAL_EXPOSURE
     assert assessment.deployment.claims[0].outcome.value == "UNKNOWN"
 
@@ -434,6 +443,85 @@ def test_policy_blocks_regional_brand_and_audience_mismatch(policy_update, citat
     assert any(citation in item for item in result.deployment.policy_citations)
 
 
+def test_scoped_regulatory_rule_blocks_matching_context() -> None:
+    data = gradient_png()
+    policy = publication_policy().model_copy(
+        update={
+            "regulatory_rules": (
+                RegulatoryRule(
+                    rule_id="india.synthetic-ad-review",
+                    description="Synthetic public advertising in India requires legal review.",
+                    effect=RegulatoryRuleEffect.BLOCK,
+                    territories=("IN",),
+                    channels=("web",),
+                    provenance_verdicts=(ProvenanceVerdict.UNKNOWN,),
+                ),
+            ),
+        }
+    )
+    result = execute_rightsgate_assessment(
+        data,
+        request=assessment_request(data),
+        rights_registry=rights_registry(data),
+        licence_registry=licence_registry(),
+        policy=policy,
+        created_at=NOW,
+    )
+
+    assert result.deployment.decision == DeploymentDecision.BLOCK
+    assert any(
+        "regulatory.india.synthetic-ad-review" in citation
+        for citation in result.deployment.policy_citations
+    )
+
+
+def test_regulatory_rule_does_not_apply_outside_its_scope() -> None:
+    data = gradient_png()
+    policy = publication_policy().model_copy(
+        update={
+            "regulatory_rules": (
+                RegulatoryRule(
+                    rule_id="us.broadcast-only",
+                    description="US broadcast assets require review.",
+                    effect=RegulatoryRuleEffect.BLOCK,
+                    territories=("US",),
+                    channels=("broadcast",),
+                ),
+            ),
+        }
+    )
+    result = execute_rightsgate_assessment(
+        data,
+        request=assessment_request(data),
+        rights_registry=rights_registry(data),
+        licence_registry=licence_registry(),
+        policy=policy,
+        created_at=NOW,
+    )
+
+    assert not any("us.broadcast-only" in citation for citation in result.deployment.policy_citations)
+
+
+def test_regulatory_rule_ids_are_unique_and_canonicalized() -> None:
+    rule = RegulatoryRule(
+        rule_id="review.synthetic",
+        description="Synthetic assets require review.",
+        effect=RegulatoryRuleEffect.REVIEW,
+        territories=("in",),
+        channels=("WEB",),
+    )
+    assert rule.territories == ("IN",)
+    assert rule.channels == ("web",)
+    with pytest.raises(ValidationError, match="rule_id values must be unique"):
+        publication_policy().model_copy(
+            update={"regulatory_rules": (rule, rule)},
+        ).model_validate(
+            publication_policy().model_copy(
+                update={"regulatory_rules": (rule, rule)}
+            ).model_dump(mode="json", by_alias=True)
+        )
+
+
 def test_executor_rejects_policy_identity_and_registry_reference_mismatch() -> None:
     data = gradient_png()
     request = assessment_request(data)
@@ -498,6 +586,106 @@ def test_execution_endpoint_persists_and_replays_exact_result(client: TestClient
     assert stored.status_code == 200
     assert stored.json()["status"] == "COMPLETE"
     assert stored.json()["assessment_sha256"] == first_body["assessment_sha256"]
+
+
+def test_cms_receipt_is_signed_stable_and_never_authorizes_release(client: TestClient) -> None:
+    data = gradient_png()
+    form, files = _multipart_payload(data, key="request.cms-001")
+    executed = client.post("/api/v1/rightsgate/assessments", data=form, files=files)
+    assert executed.status_code == 200, executed.text
+    execution = executed.json()
+    request = {
+        "schema": "veilgraph.rightsgate.cms-decision-request.v1",
+        "cms_system_id": "cms.demo",
+        "content_id": "content.campaign-001",
+        "assessment_idempotency_key": execution["idempotency_key"],
+        "expected_asset_sha256": execution["assessment"]["asset"]["sha256"],
+        "expected_assessment_sha256": execution["assessment_sha256"],
+        "requested_action": "REQUEST_PUBLICATION",
+    }
+
+    first = client.post("/api/v1/rightsgate/integrations/cms/decision", json=request)
+    second = client.post("/api/v1/rightsgate/integrations/cms/decision", json=request)
+    assert first.status_code == 200, first.text
+    assert first.json() == second.json()
+    receipt = first.json()
+    assert receipt["payload"]["workflow_status"] == "HUMAN_REVIEW_REQUIRED"
+    assert receipt["payload"]["release_authorization"] is False
+    assert receipt["payload"]["assessment_sha256"] == execution["assessment_sha256"]
+
+    verified = client.post(
+        "/api/v1/rightsgate/integrations/cms/receipts/verify",
+        json=receipt,
+    )
+    assert verified.status_code == 200
+    assert verified.json()["valid"] is True
+    assert verified.json()["release_authorization"] is False
+
+    receipt["payload"]["content_id"] = "content.tampered"
+    tampered = client.post(
+        "/api/v1/rightsgate/integrations/cms/receipts/verify",
+        json=receipt,
+    )
+    assert tampered.status_code == 200
+    assert tampered.json()["valid"] is False
+
+    attacker = Ed25519PrivateKey.generate()
+    attacker_public = attacker.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    attacker_public_b64 = base64.b64encode(attacker_public).decode("ascii")
+    canonical_payload = json.dumps(
+        receipt["payload"],
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    attacker_signature = base64.b64encode(attacker.sign(canonical_payload)).decode("ascii")
+    receipt["public_key_b64"] = attacker_public_b64
+    receipt["signer_fingerprint"] = hashlib.sha256(attacker_public).hexdigest()
+    receipt["signature_b64"] = attacker_signature
+    receipt["receipt_sha256"] = hashlib.sha256(
+        json.dumps(
+            {
+                "payload": receipt["payload"],
+                "public_key_b64": attacker_public_b64,
+                "signature_b64": attacker_signature,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    untrusted = client.post(
+        "/api/v1/rightsgate/integrations/cms/receipts/verify",
+        json=receipt,
+    )
+    assert untrusted.status_code == 200
+    assert untrusted.json()["valid"] is False
+
+
+def test_cms_receipt_rejects_commitment_mismatch(client: TestClient) -> None:
+    data = gradient_png()
+    form, files = _multipart_payload(data, key="request.cms-mismatch")
+    execution = client.post(
+        "/api/v1/rightsgate/assessments",
+        data=form,
+        files=files,
+    ).json()
+    response = client.post(
+        "/api/v1/rightsgate/integrations/cms/decision",
+        json={
+            "cms_system_id": "cms.demo",
+            "content_id": "content.campaign-002",
+            "assessment_idempotency_key": execution["idempotency_key"],
+            "expected_asset_sha256": "0" * 64,
+            "expected_assessment_sha256": execution["assessment_sha256"],
+        },
+    )
+
+    assert response.status_code == 409
+    assert "asset commitment" in response.text
 
 
 def test_execution_endpoint_rejects_idempotency_conflict(client: TestClient) -> None:

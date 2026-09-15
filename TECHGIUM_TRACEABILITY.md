@@ -26,11 +26,11 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | ING-02 | Process video | INHERITED | Full-timeline and audio-track tests |
 | ING-03 | Process standalone audio | PLANNED | Decoder, canonicalization and malformed-file tests |
 | PROV-01 | Verify content credentials/C2PA | IMPLEMENTED | Official offline SDK adapter and no-manifest/status-mapping tests; signed, mismatched, stripped and replayed fixtures remain for `VALIDATED` |
-| PROV-02 | Assess wholly AI-generated media | PLANNED | Frozen multi-generator test split with calibration and FPR |
-| PROV-03 | Assess partial generation or manipulation | PLANNED | Splice/inpaint/localization fixtures with region/timeline scoring |
+| PROV-02 | Assess wholly AI-generated media | IMPLEMENTED | C2PA and bounded self-declared generator-metadata evidence with synthetic sanity metrics; open-world visual attribution still requires a frozen multi-generator split |
+| PROV-03 | Assess partial generation or manipulation | IMPLEMENTED | Partial-edit declarations and localized non-attributive residual evidence are tested; representative splice/inpaint localization remains for `VALIDATED` |
 | PROV-04 | Detect provenance metadata or watermark tampering | PLANNED | Removal, forgery, collision and transformation attack matrix |
 | RIGHTS-01 | Identify copyrighted-work exposure | IMPLEMENTED | Versioned byte-bound registry and exact/perceptual image candidate tests; transformed-match frozen benchmark remains for `VALIDATED` |
-| RIGHTS-02 | Identify trademark/logo exposure | PLANNED | Positive, hard-negative and obscured-mark benchmark |
+| RIGHTS-02 | Identify trademark/logo exposure | IMPLEMENTED | Governed ORB/RANSAC region localization with byte-bound evidence and a frozen synthetic sanity set; open-world and obscured-mark benchmarks remain |
 | RIGHTS-03 | Evaluate licence constraints | IMPLEMENTED | Status, intended-use, channel, territory, validity-window, conflict and registry-integrity tests |
 | RIGHTS-04 | Identify likeness exposure | PLANNED | Consented local gallery with threshold/FAR evidence |
 | RIGHTS-05 | Identify voice exposure | PLANNED | Consented local voice set with transformation and FAR evidence |
@@ -38,14 +38,14 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | POLICY-01 | Configurable brand/channel/audience policy | IMPLEMENTED | Versioned schema and deterministic mismatch fixtures |
 | POLICY-02 | Regional territory policy | IMPLEMENTED | Territory allow-list and policy-version identity tests |
 | POLICY-03 | Clear `GO`/`REVIEW`/`BLOCK` outcome | IMPLEMENTED | Exact deterministic mapping, missing-component abstention and contract fail-closed tests |
-| POLICY-04 | Regulatory policy packs | PLANNED | Jurisdiction-specific versioned rule packs and decision-table tests |
+| POLICY-04 | Regulatory policy packs | IMPLEMENTED | Versioned context/verdict-scoped `REVIEW`/`BLOCK` rule engine and deterministic tests; curated legal rule content remains governed external input |
 | EVID-01 | Supporting evidence per dimension | IMPLEMENTED | Challenge evidence schema, byte binding, graph references and review UI inspection |
 | CONF-01 | Confidence per dimension | PLANNED | Calibration protocol, reliability plots and abstention tests |
 | FLOW-00 | Integrated RightsGate review UI | IMPLEMENTED | Image/reference intake and three-dimension evidence/decision workflow |
-| FLOW-01 | Integrate with an existing CMS workflow | PLANNED | Authenticated webhook and simulated CMS demonstration |
-| EVAL-00 | Reproducible component sanity evaluation | IMPLEMENTED | Frozen 32-case synthetic rights manifest, byte hashes, exact-only ablation and checked-in bounded results |
-| EVAL-01 | Declare test set | PLANNED | Versioned manifest, licences, hashes and frozen family split |
-| EVAL-02 | State accuracy and false-positive rate | PLANNED | Reproducible per-dimension evaluation report |
+| FLOW-01 | Integrate with an existing CMS workflow | IMPLEMENTED | UI-consumed CMS request/receipt schemas, immutable-assessment binding, deterministic Ed25519 receipt and verification endpoint; vendor authentication/webhook delivery remains |
+| EVAL-00 | Reproducible component sanity evaluation | VALIDATED | Frozen 32-case retrieval and 64-case challenge-signal manifests, byte hashes, exact-only ablation and checked-in bounded results |
+| EVAL-01 | Declare test set | IMPLEMENTED | Versioned frozen synthetic manifests and byte fingerprints exist; representative legally sourced family splits remain |
+| EVAL-02 | State accuracy and false-positive rate | VALIDATED | Bounded synthetic accuracy/FPR for perceptual retrieval, localization and metadata markers; no challenge-wide or real-world metric claim |
 | EVAL-03 | Go beyond standards/watermarking | PLANNED | Baseline and ablation comparison against the full system |
 | SEC-01 | Protect assets, references and audit evidence | INHERITED | Updated threat model, security tests and signed release proof |
 

@@ -70,6 +70,8 @@ def test_contract_bundle_declares_implemented_contracts_without_detector_claims(
         "veilgraph.rightsgate.rights-reference-registry.v1",
         "veilgraph.rightsgate.licence-registry.v1",
         "veilgraph.rightsgate.publication-policy.v1",
+        "veilgraph.rightsgate.cms-decision-request.v1",
+        "veilgraph.rightsgate.cms-decision-receipt.v1",
     }
 
 

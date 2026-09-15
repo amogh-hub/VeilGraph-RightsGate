@@ -28,6 +28,8 @@ from .contracts import (
     GraphEdgeKind,
     GraphNodeKind,
     MediaKind,
+    ProvenanceAssessment,
+    ProvenanceVerdict,
     RightsAssessment,
     RightsGateAssessment,
     RightsGateAssessmentRequest,
@@ -38,31 +40,27 @@ from .policy import (
     PublicationPolicy,
     evaluate_publication_policy,
 )
-from .provenance import verify_c2pa
+from .provenance import inspect_image_forensics, verify_c2pa
+from .provenance.image_forensics import COMPONENT_VERSION as FORENSICS_COMPONENT_VERSION
 from .rights import (
     LicenceEvaluationResult,
     LicenceRegistry,
+    LocalizedReferenceMatchResult,
     ReferenceKind,
     RightsImageMatchResult,
     RightsReferenceRegistry,
     evaluate_candidate_licences,
+    localize_reference_images,
     match_reference_image,
 )
 from .rights.image_registry import COMPONENT_VERSION as IMAGE_REGISTRY_COMPONENT_VERSION
 from .rights.licensing import COMPONENT_VERSION as LICENCE_COMPONENT_VERSION
+from .rights.localization import COMPONENT_VERSION as LOCALIZER_COMPONENT_VERSION
 
 KNOWN_UNIMPLEMENTED_COMPONENTS: dict[str, tuple[str, str]] = {
-    "provenance.independent-forensics": (
-        "provenance.forensic-detector",
-        "Independent AI-media forensic detection is not implemented.",
-    ),
     "provenance.watermark-forensics": (
         "provenance.watermark-detector",
         "General invisible-watermark and metadata-tampering detection is not implemented.",
-    ),
-    "rights.trademark-localizer": (
-        "rights.trademark-detector",
-        "Trademark and logo localization is not implemented.",
     ),
     "rights.likeness-consent": (
         "rights.consented-likeness-detector",
@@ -73,7 +71,7 @@ KNOWN_UNIMPLEMENTED_COMPONENTS: dict[str, tuple[str, str]] = {
         "Consented voice comparison is not implemented.",
     ),
 }
-EXECUTOR_VERSION = "1.0.0"
+EXECUTOR_VERSION = "1.1.0"
 EXECUTOR_COMPONENT_ID = "orchestration.executor"
 
 
@@ -102,8 +100,10 @@ def execution_fingerprint(
             "executor_version": EXECUTOR_VERSION,
             "component_versions": {
                 "provenance.c2pa": c2pa.__version__,
+                "provenance.independent-forensics": FORENSICS_COMPONENT_VERSION,
                 "rights.local-image-registry": IMAGE_REGISTRY_COMPONENT_VERSION,
                 "rights.licence-evaluator": LICENCE_COMPONENT_VERSION,
+                "rights.trademark-localizer": LOCALIZER_COMPONENT_VERSION,
                 "deployment.policy-compiler": POLICY_COMPONENT_VERSION,
             },
             "max_hamming_distance": max_hamming_distance,
@@ -168,13 +168,27 @@ def validate_execution_asset(data: bytes, request: RightsGateAssessmentRequest) 
 
 def _combine_rights(
     image_result: RightsImageMatchResult,
+    localization_result: LocalizedReferenceMatchResult,
     licence_result: LicenceEvaluationResult,
 ) -> RightsAssessment:
-    claims: tuple[ClaimRecord, ...] = image_result.assessment.claims + licence_result.claims
-    limitations = tuple(
-        sorted(set(image_result.assessment.limitations + licence_result.limitations))
+    claims: tuple[ClaimRecord, ...] = (
+        image_result.assessment.claims
+        + localization_result.claims
+        + licence_result.claims
     )
-    if image_result.assessment.state == AssessmentState.UNAVAILABLE:
+    limitations = tuple(
+        sorted(
+            set(
+                image_result.assessment.limitations
+                + localization_result.limitations
+                + licence_result.limitations
+            )
+        )
+    )
+    if (
+        image_result.assessment.state == AssessmentState.UNAVAILABLE
+        and localization_result.component.state != ComponentState.AVAILABLE
+    ):
         return RightsAssessment(
             state=AssessmentState.UNAVAILABLE,
             verdict=RightsVerdict.UNKNOWN,
@@ -191,10 +205,14 @@ def _combine_rights(
             limitations=limitations,
         )
     if licence_result.candidate_reference_ids:
+        localized_confidence = max(
+            (item.confidence for item in localization_result.evidence),
+            default=0,
+        )
         return RightsAssessment(
             state=AssessmentState.PARTIAL,
             verdict=RightsVerdict.POTENTIAL_EXPOSURE,
-            confidence=image_result.assessment.confidence,
+            confidence=max(image_result.assessment.confidence, localized_confidence),
             claims=claims,
             limitations=tuple(
                 sorted(
@@ -214,6 +232,56 @@ def _combine_rights(
         confidence=0,
         claims=claims,
         limitations=limitations,
+    )
+
+
+def _combine_provenance(
+    c2pa_assessment: ProvenanceAssessment,
+    forensic_assessment: ProvenanceAssessment,
+) -> ProvenanceAssessment:
+    """Preserve both lanes while applying explicit, deterministic precedence."""
+
+    claims = c2pa_assessment.claims + forensic_assessment.claims
+    limitations = tuple(
+        sorted(set(c2pa_assessment.limitations + forensic_assessment.limitations))
+    )
+    states = {c2pa_assessment.state, forensic_assessment.state}
+    if states == {AssessmentState.UNAVAILABLE}:
+        state = AssessmentState.UNAVAILABLE
+    elif AssessmentState.UNAVAILABLE in states or AssessmentState.PARTIAL in states:
+        state = AssessmentState.PARTIAL
+    else:
+        state = AssessmentState.COMPLETE
+
+    candidates = (c2pa_assessment, forensic_assessment)
+    if any(item.verdict == ProvenanceVerdict.TAMPERED for item in candidates):
+        verdict = ProvenanceVerdict.TAMPERED
+        confidence = max(
+            item.confidence
+            for item in candidates
+            if item.verdict == ProvenanceVerdict.TAMPERED
+        )
+    else:
+        conclusive = tuple(
+            item
+            for item in candidates
+            if item.verdict != ProvenanceVerdict.UNKNOWN
+        )
+        if conclusive:
+            strongest = max(conclusive, key=lambda item: item.confidence)
+            verdict = strongest.verdict
+            confidence = strongest.confidence
+        else:
+            verdict = ProvenanceVerdict.UNKNOWN
+            confidence = 0
+    if verdict == ProvenanceVerdict.UNKNOWN and not limitations:
+        limitations = ("Neither provenance lane produced a supported origin conclusion.",)
+    return ProvenanceAssessment(
+        state=state,
+        verdict=verdict,
+        confidence=confidence,
+        claims=claims,
+        limitations=limitations if verdict == ProvenanceVerdict.UNKNOWN else (),
     )
 
 
@@ -391,12 +459,25 @@ def execute_rightsgate_assessment(
         max_hamming_distance=max_hamming_distance,
     )
 
-    provenance_result = verify_c2pa(data, descriptor.media_type, descriptor.sha256)
+    c2pa_result = verify_c2pa(data, descriptor.media_type, descriptor.sha256)
+    forensic_result = inspect_image_forensics(
+        data,
+        asset_sha256=descriptor.sha256,
+    )
+    provenance = _combine_provenance(
+        c2pa_result.assessment,
+        forensic_result.assessment,
+    )
     image_result = match_reference_image(
         data,
         asset_sha256=descriptor.sha256,
         registry=rights_registry,
         max_hamming_distance=max_hamming_distance,
+    )
+    localization_result = localize_reference_images(
+        data,
+        asset_sha256=descriptor.sha256,
+        registry=rights_registry,
     )
     licence_result = evaluate_candidate_licences(
         image_result,
@@ -404,8 +485,9 @@ def execute_rightsgate_assessment(
         context=request.context,
         registry=licence_registry,
         assessed_at=created_at,
+        additional_evidence=localization_result.evidence,
     )
-    rights = _combine_rights(image_result, licence_result)
+    rights = _combine_rights(image_result, localization_result, licence_result)
 
     components = [
         ComponentRecord(
@@ -415,8 +497,10 @@ def execute_rightsgate_assessment(
             state=ComponentState.AVAILABLE,
             mandatory=True,
         ),
-        provenance_result.component,
+        c2pa_result.component,
+        forensic_result.component,
         image_result.component,
+        localization_result.component,
         licence_result.component,
     ]
     present = {item.component_id for item in components}
@@ -429,7 +513,7 @@ def execute_rightsgate_assessment(
         asset_sha256=descriptor.sha256,
         context=request.context,
         policy=policy,
-        provenance=provenance_result.assessment,
+        provenance=provenance,
         rights=rights,
         licence=licence_result,
         components=tuple(components),
@@ -437,8 +521,10 @@ def execute_rightsgate_assessment(
     components.append(policy_result.component)
     evidence = tuple(
         sorted(
-            provenance_result.evidence
+            c2pa_result.evidence
+            + forensic_result.evidence
             + image_result.evidence
+            + localization_result.evidence
             + licence_result.evidence
             + policy_result.evidence,
             key=lambda item: item.evidence_id,
@@ -456,7 +542,7 @@ def execute_rightsgate_assessment(
         components=tuple(sorted(components, key=lambda item: item.component_id)),
         evidence=evidence,
         exposure_graph=graph,
-        provenance=provenance_result.assessment,
+        provenance=provenance,
         rights=rights,
         deployment=policy_result.assessment,
     )
