@@ -28,7 +28,7 @@ This document is the authoritative, claim-bounded record of the current TECHgium
 | Accuracy and false-positive rates | 🟡 Reproducible synthetic metrics report accuracy/FPR for three bounded lanes; challenge-wide or real-world accuracy/FPR cannot be claimed |
 | Confidence calibration | 🟡 Brier score, fixed-bin ECE and MCE are reproducible on the frozen synthetic signal set; representative calibration is missing |
 | Comparison against C2PA/watermark-only baselines | 🟡 A frozen credentials/watermark-only all-abstain ablation is implemented for fixtures containing no such evidence; a representative attack set is missing |
-| Signed competition release and demo | ❌ Not completed |
+| Signed competition release and demo | 🟡 Version `v0.4.0-rightsgate-techgium` is packaged as a sanitized Ed25519-signed archive with pinned verification and a public release record; final portal-specific demo rehearsal/recording remains |
 
 ## What is locked in
 

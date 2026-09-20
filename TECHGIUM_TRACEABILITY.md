@@ -47,7 +47,7 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | EVAL-01 | Declare test set | IMPLEMENTED | Versioned frozen synthetic manifests and byte fingerprints exist; representative legally sourced family splits remain |
 | EVAL-02 | State accuracy and false-positive rate | VALIDATED | Bounded synthetic accuracy/FPR for perceptual retrieval, localization and metadata markers; no challenge-wide or real-world metric claim |
 | EVAL-03 | Go beyond standards/watermarking | VALIDATED | Frozen 64-case synthetic all-abstain credentials/watermark-only baseline versus full signal pipeline; representative credential/watermark attack ablation remains |
-| SEC-01 | Protect assets, references and audit evidence | IMPLEMENTED | Updated threat model, secret/runtime exclusions, signed sanitized release-envelope builder, pinned signer verification and release-tampering tests; published competition tag remains |
+| SEC-01 | Protect assets, references and audit evidence | RELEASED | Version `v0.4.0-rightsgate-techgium`: updated threat model, secret/runtime exclusions, signed sanitized release envelope, pinned signer verification, release-tampering tests and public release artifact |
 
 ## Release rule
 

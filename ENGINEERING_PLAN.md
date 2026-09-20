@@ -92,7 +92,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 6 — Competition freeze
 
-**Status:** IN PROGRESS — sanitized package exclusions, an Ed25519-signed manifest envelope, pinned verification and adversarial package tests are implemented. The final public tag/release is not yet frozen.
+**Status:** IN PROGRESS — sanitized package exclusions, an Ed25519-signed manifest envelope, pinned verification, adversarial package tests and public version `v0.4.0-rightsgate-techgium` are complete. Portal-specific demo rehearsal and the final submission freeze remain.
 
 - Close challenge traceability and threat-model gaps.
 - Run dependency, secret and software-bill-of-materials checks.
