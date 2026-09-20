@@ -13,7 +13,7 @@
 
 Uploaded media, filenames, metadata, C2PA assertions, embedded text/OCR, external reference records, webhooks and all model or tool outputs are untrusted inputs. They may supply evidence but may never change the assessment goal, select privileged tools, alter policy, authorize release or sign proof.
 
-Release authority belongs only to administered deterministic policy and verification code operating on validated schemas. The current public executor accepts caller-supplied policy and registry documents, so its receipts are deliberately non-authorizing even when the computed decision is `GO`.
+Assessment authority belongs to deterministic policy and verification code operating on validated schemas. The public executor accepts caller-supplied policy and registry documents, so its assessment and CMS decision receipts remain deliberately non-authorizing even when the computed decision is `GO`. A separate release endpoint can issue a short-lived authorization only from that signed `GO` plus fresh Ed25519 attestations from distinct, locally administered `RIGHTS_REVIEWER` and `RELEASE_MANAGER` keys.
 
 ## Adversaries
 
@@ -39,6 +39,10 @@ Release authority belongs only to administered deterministic policy and verifica
 | Policy or threshold substitution | Version pinning, signatures/hashes and authorization checks |
 | Biometric misuse | Consented local registry, scoped access, audit and deletion controls |
 | Evidence tampering | Asset/result binding, append-only audit commitments and signed proof |
+| Reviewer impersonation or self-approval | Operator-controlled key registry, pinned Ed25519 keys, role separation and distinct reviewer identities |
+| Stale/replayed release approval | Assessment/asset/CMS binding, approval freshness, short authorization TTL and current registry commitment |
+| Video frame omission | Every-physical-frame change screen, first/last retention, selected-frame deep evidence and explicit degradation if the detector budget truncates candidates |
+| Truncated/spoofed audio | RIFF/WAVE magic checks, bounded PCM parameters and complete decoded payload-length verification |
 
 ## Security invariants
 
@@ -61,6 +65,10 @@ Release authority belongs only to administered deterministic policy and verifica
 - raw assessment and reference media is processed in memory and is not stored in the RightsGate assessment table;
 - caller-supplied governance documents can produce decision support but always return `release_authorization: false`.
 - CMS decision receipts bind content, asset, request, execution and assessment commitments; Ed25519 verification detects payload, key or signature substitution, while the receipt remains explicitly non-authorizing.
+- dual-control release receipts bundle the CMS decision and reviewer attestations, bind their commitments, require current role-separated trust, expire after a bounded interval and fail verification after registry rotation/revocation;
+- video inputs bind dimensions and duration, change-screen every physical frame, and rebind derived image evidence to the original video hash plus temporal/frame-region coordinates;
+- standalone PCM/WAV inputs bind duration and decode the declared complete payload, while origin, likeness, voice and acoustic-work claims abstain rather than infer from container structure;
+- sanitized competition archives exclude keys, runtime databases and workspaces, enforce an exact member manifest, and support an Ed25519-signed envelope with optional signer pinning.
 
 ## Non-goals
 

@@ -14,6 +14,15 @@
     "precision": 1.0,
     "recall": 1.0
   },
+  "visual_localization_calibration": {
+    "sample_count": 32,
+    "bin_count": 10,
+    "brier_score": 0.0005449155079999996,
+    "expected_calibration_error": 0.015795749999999997,
+    "maximum_calibration_error": 0.031591499999999995,
+    "mean_score": 0.48420425,
+    "empirical_positive_rate": 0.5
+  },
   "generative_metadata": {
     "true_positive": 16,
     "true_negative": 16,
@@ -23,6 +32,41 @@
     "false_positive_rate": 0.0,
     "precision": 1.0,
     "recall": 1.0
+  },
+  "generative_metadata_calibration": {
+    "sample_count": 32,
+    "bin_count": 10,
+    "brier_score": 0.028125000000000008,
+    "expected_calibration_error": 0.11250000000000002,
+    "maximum_calibration_error": 0.30000000000000004,
+    "mean_score": 0.38749999999999996,
+    "empirical_positive_rate": 0.5
+  },
+  "standards_ablation": {
+    "sample_count": 64,
+    "credentials_or_watermark_evidence_cases": 0,
+    "credentials_or_watermark_only": {
+      "true_positive": 0,
+      "true_negative": 32,
+      "false_positive": 0,
+      "false_negative": 32,
+      "accuracy": 0.5,
+      "false_positive_rate": 0.0,
+      "precision": 0.0,
+      "recall": 0.0
+    },
+    "full_signal_pipeline": {
+      "true_positive": 32,
+      "true_negative": 32,
+      "false_positive": 0,
+      "false_negative": 0,
+      "accuracy": 1.0,
+      "false_positive_rate": 0.0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "accuracy_lift": 0.5,
+    "recall_lift": 1.0
   },
   "partial_edit_subtype_accuracy": 1.0,
   "reproduce": "cd backend && PYTHONPATH=. python run_rightsgate_signal_eval.py",

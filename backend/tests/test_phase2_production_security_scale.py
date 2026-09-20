@@ -225,6 +225,25 @@ def test_sanitized_release_verifier_rejects_private_key_marker():
     assert verify_release_package_bytes(buffer.getvalue())["valid"] is False
 
 
+def test_signed_release_manifest_requires_pinned_signer(tmp_path):
+    (tmp_path / "README.md").write_text("signed release\n")
+    package, _ = build_release_package(tmp_path, phase="rightsgate", sign_manifest=True)
+    verified = verify_release_package_bytes(package)
+    assert verified["valid"] is True
+    assert verified["signed"] is True
+    assert len(verified["signer_fingerprint"]) == 64
+    assert verify_release_package_bytes(
+        package,
+        expected_signer_fingerprint=verified["signer_fingerprint"],
+    )["valid"] is True
+    rejected = verify_release_package_bytes(
+        package,
+        expected_signer_fingerprint="0" * 64,
+    )
+    assert rejected["valid"] is False
+    assert "expected trust root" in rejected["checks"][0]["detail"]
+
+
 def test_ops_status_is_pii_free_and_security_headers_are_present(client):
     response = client.get("/api/v1/ops/status")
     assert response.status_code == 200, response.text

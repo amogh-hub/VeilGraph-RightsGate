@@ -8,7 +8,9 @@ The repository includes a frozen 32-case deterministic synthetic rights-retrieva
 
 This artifact validates byte stability, metric code and one resize-resilience ablation. It is explicitly **not** the representative challenge test set described below, and its accuracy/FPR must never be presented as real-world copyright or trademark performance.
 
-A second frozen 64-case manifest evaluates two additional bounded lanes: 16 localized-reference positives plus 16 seeded non-matches, and 16 self-declared generator-metadata positives plus 16 benign/ambiguous metadata negatives. It reports accuracy `1.00` and false-positive rate `0.00` for each lane, with `1.00` partial-edit subtype accuracy. These are synthetic contract and threshold sanity results—not evidence of open-world logo detection, visual AI attribution or real-world performance.
+A second frozen 64-case manifest evaluates two additional bounded lanes: 16 localized-reference positives plus 16 seeded non-matches, and 16 self-declared generator-metadata positives plus 16 benign/ambiguous metadata negatives. It reports accuracy `1.00` and false-positive rate `0.00` for each lane, with `1.00` partial-edit subtype accuracy. Localization has Brier score `0.000545` and ECE `0.015796`; declared generator metadata has Brier score `0.028125` and ECE `0.1125`. These are synthetic contract and score-behavior sanity results—not evidence of open-world logo detection, visual AI attribution or real-world calibration.
+
+The same manifest includes a deliberately narrow credentials/invisible-watermark-only ablation. Because none of its fixtures contains credential or watermark ground truth, that baseline abstains on all 64 cases (accuracy `0.50`, recall `0.00`), while the full bounded signal pipeline reaches accuracy and recall `1.00`. This demonstrates implemented value beyond those signals only on this declared synthetic set; it is not a representative product comparison.
 
 ## Dataset governance
 

@@ -72,6 +72,9 @@ def test_contract_bundle_declares_implemented_contracts_without_detector_claims(
         "veilgraph.rightsgate.publication-policy.v1",
         "veilgraph.rightsgate.cms-decision-request.v1",
         "veilgraph.rightsgate.cms-decision-receipt.v1",
+        "veilgraph.rightsgate.reviewer-trust-registry.v1",
+        "veilgraph.rightsgate.release-authorization-request.v1",
+        "veilgraph.rightsgate.release-authorization-receipt.v1",
     }
 
 
@@ -106,6 +109,11 @@ def test_openapi_exposes_rightsgate_contract_boundary(client: TestClient) -> Non
     assert "/api/v1/rightsgate/rights/references/image" in document["paths"]
     assert "/api/v1/rightsgate/assessments" in document["paths"]
     assert "/api/v1/rightsgate/assessments/{idempotency_key}" in document["paths"]
+    assert "/api/v1/rightsgate/integrations/cms/release-authorizations" in document["paths"]
+    assert (
+        "/api/v1/rightsgate/integrations/cms/release-authorizations/verify"
+        in document["paths"]
+    )
 
 
 def test_c2pa_endpoint_inspects_unsigned_image_without_claiming_human_authorship(

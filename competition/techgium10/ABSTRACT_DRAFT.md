@@ -6,17 +6,17 @@
 
 **VeilGraph RightsGate — Evidence-First Trust Gateway for AI Media**
 
-## Draft (293 words)
+## Draft (target: 300 words maximum)
 
 VeilGraph RightsGate is a local-first pre-publication trust gateway that converts each media asset into an inspectable Asset Exposure Graph rather than returning one opaque detector score. It extends VeilGraph’s tested privacy, policy and evidence foundations into three coordinated dimensions: provenance, rights exposure and deployment readiness.
 
-The image prototype validates embedded C2PA Content Credentials offline and distinguishes recognized whole/partial AI declarations, cryptographic mismatches and unknown provenance. An independent lane also inspects bounded generator metadata and localizes pixel-residual inconsistencies. Missing credentials or metadata remain unknown rather than becoming evidence of human authorship, and residual anomalies remain non-attributive review signals.
+The prototype validates embedded C2PA Content Credentials offline and distinguishes recognized whole/partial AI declarations, cryptographic mismatches and unknown provenance. An independent image lane inspects generator metadata and localizes pixel-residual inconsistencies. MP4/MOV assets receive an every-frame change screen followed by deep analysis of evidence and novel frames; PCM/WAV payloads are completely decoded within fixed limits. Missing signals remain unknown, never evidence of human authorship.
 
-A governed registry performs exact-byte and perceptual retrieval and uses ORB/RANSAC geometry to localize registered works or marks inside a larger image. Every candidate is bound to the asset bytes, registry version, threshold and source record, and remains evidence—not an infringement judgment. A separate licence evaluator checks status, dates, territory, channel and intended use.
+A governed registry performs exact-byte and perceptual retrieval and uses ORB/RANSAC geometry to localize registered works or marks in images or video frames. Every candidate is bound to the original asset, registry, threshold and source record, and remains evidence—not an infringement judgment. A licence evaluator checks status, dates, territory, channel and intended use.
 
-A versioned policy compiler applies audience, brand, regional and configurable regulatory rules before returning GO, REVIEW or BLOCK. The durable workflow rejects changed inputs under a reused idempotency key, verifies stored commitments on replay and presents confidence, claims, evidence, component health and citations. It then creates an Ed25519-signed CMS decision receipt bound to the content, asset, assessment and execution commitments. Caller-supplied policy never authorizes publication; release remains locked behind a separate administered boundary.
+A versioned policy compiler applies audience, brand, regional and regulatory rules before returning GO, REVIEW or BLOCK. The durable workflow rejects changed inputs under reused idempotency keys, verifies replayed commitments and presents confidence, evidence, component health and citations. Its signed CMS decision never authorizes publication. A separate short-lived release receipt requires a signed GO plus distinct Ed25519 approvals from trusted rights-reviewer and release-manager roles.
 
-Two frozen, byte-fingerprinted synthetic sanity sets make current claims reproducible. The 32-case global retrieval set shows perceptual matching improves exact-only recall from 0.50 to 1.00 at 0.00 false-positive rate. A separate 64-case set reports 1.00 accuracy and 0.00 false-positive rate for governed-reference localization and self-declared generator-metadata recognition. These numbers are explicitly synthetic, not open-world performance claims. Representative C2PA, watermark, likeness, voice and real-media evaluation remains the next validation gate.
+Two frozen, byte-fingerprinted synthetic sets make current claims reproducible. The 32-case retrieval set shows perceptual matching improves exact-only recall from 0.50 to 1.00 at 0.00 false-positive rate. A 64-case set reports 1.00 accuracy and 0.00 false-positive rate for localization and self-declared generator metadata, adds Brier/ECE calibration, and compares the full signals with a credentials/watermark-only baseline. These are synthetic engineering results, not open-world claims. Representative C2PA, watermark, likeness, voice and real-media evaluation remains the next gate.
 
 ## Suggested keywords
 

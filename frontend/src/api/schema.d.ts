@@ -551,6 +551,58 @@ export interface components {
       "source_record_id": string
       "feature_manifest"?: components['schemas']['ImageFeatureManifest'] | null
     }
+    "ReleaseApprovalPayload": {
+      "approval_schema"?: string
+      "approval_id": string
+      "reviewer_id": string
+      "reviewer_role": components['schemas']['ReviewerRole']
+      "cms_receipt_sha256": string
+      "assessment_sha256": string
+      "asset_sha256": string
+      "cms_system_id": string
+      "content_id": string
+      "action"?: string
+      "reason": string
+      "reviewed_at": string
+    }
+    "ReleaseAuthorizationPayload": {
+      "schema"?: string
+      "authorization_id": string
+      "cms_receipt_sha256": string
+      "assessment_sha256": string
+      "asset_sha256": string
+      "cms_system_id": string
+      "content_id": string
+      "reviewer_registry_sha256": string
+      "approval_sha256s": Array<string>
+      "reviewer_ids": Array<string>
+      "issued_at": string
+      "expires_at": string
+      "release_authorization"?: boolean
+    }
+    "ReleaseAuthorizationReceipt": {
+      "receipt_schema"?: string
+      "payload": components['schemas']['ReleaseAuthorizationPayload']
+      "decision_receipt": components['schemas']['CMSDecisionReceipt']
+      "approvals": Array<components['schemas']['ReviewerAttestation']>
+      "signature_algorithm"?: string
+      "signature_b64": string
+      "public_key_b64": string
+      "signer_fingerprint": string
+      "receipt_sha256": string
+    }
+    "ReleaseAuthorizationRequest": {
+      "schema"?: string
+      "decision_receipt": components['schemas']['CMSDecisionReceipt']
+      "approvals": Array<components['schemas']['ReviewerAttestation']>
+    }
+    "ReleaseAuthorizationVerification": {
+      "verification_schema"?: string
+      "receipt_sha256": string
+      "valid": boolean
+      "release_authorization": boolean
+      "reason": string
+    }
     "RepresentationKind": "ORIGINAL" | "VISUAL_FRAME" | "AUDIO_TRACK" | "TEXT_TRACK" | "THUMBNAIL"
     "RequestValidationReceipt": {
       "receipt_schema"?: string
@@ -569,6 +621,12 @@ export interface components {
       "job_status": components['schemas']['JobStatus']
     }
     "ReviewStatus": "NOT_REQUIRED" | "PENDING" | "PROTECT" | "IGNORE"
+    "ReviewerAttestation": {
+      "payload": components['schemas']['ReleaseApprovalPayload']
+      "signature_algorithm"?: string
+      "signature_b64": string
+    }
+    "ReviewerRole": "RIGHTS_REVIEWER" | "RELEASE_MANAGER"
     "RightsAssessment": {
       "dimension"?: string
       "state": components['schemas']['AssessmentState']

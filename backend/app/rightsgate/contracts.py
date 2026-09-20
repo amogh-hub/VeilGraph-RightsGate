@@ -308,8 +308,10 @@ class AssetDescriptor(StrictFrozenModel):
     def validate_media_dimensions(self) -> AssetDescriptor:
         if self.media_kind in {MediaKind.AUDIO, MediaKind.VIDEO} and self.duration_seconds is None:
             raise ValueError("audio and video assets require duration_seconds")
-        if self.media_kind == MediaKind.IMAGE and (self.width is None or self.height is None):
-            raise ValueError("image assets require width and height")
+        if self.media_kind in {MediaKind.IMAGE, MediaKind.VIDEO} and (
+            self.width is None or self.height is None
+        ):
+            raise ValueError("image and video assets require width and height")
         return self
 
 

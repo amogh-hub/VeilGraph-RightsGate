@@ -16,20 +16,68 @@ async function sha256(file: File) {
   return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('')
 }
 
-async function imageDimensions(file: File) {
-  const bitmap = await createImageBitmap(file)
-  try {
-    return { width: bitmap.width, height: bitmap.height }
-  } finally {
-    bitmap.close()
-  }
+type MediaMetadata = {
+  kind: 'IMAGE' | 'VIDEO' | 'AUDIO'
+  mediaType: string
+  width?: number
+  height?: number
+  durationSeconds?: number
 }
 
-function mediaType(file: File) {
+function mediaType(file: File): Pick<MediaMetadata, 'kind' | 'mediaType'> {
   const lower = file.name.toLowerCase()
-  if (lower.endsWith('.png')) return 'image/png'
-  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg'
-  throw new Error('RightsGate currently accepts PNG and JPEG images in the integrated workflow.')
+  if (lower.endsWith('.png')) return { kind: 'IMAGE', mediaType: 'image/png' }
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return { kind: 'IMAGE', mediaType: 'image/jpeg' }
+  if (lower.endsWith('.mp4')) return { kind: 'VIDEO', mediaType: 'video/mp4' }
+  if (lower.endsWith('.mov')) return { kind: 'VIDEO', mediaType: 'video/quicktime' }
+  if (lower.endsWith('.wav')) return { kind: 'AUDIO', mediaType: 'audio/wav' }
+  throw new Error('RightsGate accepts PNG, JPEG, MP4, MOV and bounded PCM/WAV assets.')
+}
+
+async function mediaMetadata(file: File): Promise<MediaMetadata> {
+  const identity = mediaType(file)
+  if (identity.kind === 'IMAGE') {
+    const bitmap = await createImageBitmap(file)
+    try {
+      return { ...identity, width: bitmap.width, height: bitmap.height }
+    } finally {
+      bitmap.close()
+    }
+  }
+  const url = URL.createObjectURL(file)
+  try {
+    if (identity.kind === 'VIDEO') {
+      const video = document.createElement('video')
+      video.preload = 'metadata'
+      video.src = url
+      await new Promise<void>((resolve, reject) => {
+        video.onloadedmetadata = () => resolve()
+        video.onerror = () => reject(new Error('The browser could not read video metadata.'))
+      })
+      if (!Number.isFinite(video.duration) || video.duration <= 0 || !video.videoWidth || !video.videoHeight) {
+        throw new Error('The video has invalid duration or frame dimensions.')
+      }
+      return {
+        ...identity,
+        width: video.videoWidth,
+        height: video.videoHeight,
+        durationSeconds: video.duration,
+      }
+    }
+    const audio = document.createElement('audio')
+    audio.preload = 'metadata'
+    audio.src = url
+    await new Promise<void>((resolve, reject) => {
+      audio.onloadedmetadata = () => resolve()
+      audio.onerror = () => reject(new Error('The browser could not read WAV metadata.'))
+    })
+    if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
+      throw new Error('The audio has an invalid duration.')
+    }
+    return { ...identity, durationSeconds: audio.duration }
+  } finally {
+    URL.revokeObjectURL(url)
+  }
 }
 
 function score(value: number) {
@@ -107,10 +155,10 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
     setResult(null)
     setCmsReceipt(null)
     try {
-      const [assetSha, referenceSha, dimensions] = await Promise.all([
+      const [assetSha, referenceSha, metadata] = await Promise.all([
         sha256(asset),
         sha256(reference),
-        imageDimensions(asset),
+        mediaMetadata(asset),
       ])
       const referenceId = `reference.${referenceKind === 'TRADEMARK' ? 'mark' : 'work'}-${referenceSha.slice(0, 16)}`
       const sourceRecordId = `rights-record.${referenceSha.slice(0, 20)}`
@@ -143,18 +191,19 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
           asset: {
             asset_id: `asset.${assetSha.slice(0, 24)}`,
             sha256: assetSha,
-            media_kind: 'IMAGE',
-            media_type: mediaType(asset),
+            media_kind: metadata.kind,
+            media_type: metadata.mediaType,
             size_bytes: asset.size,
             original_filename: asset.name,
-            width: dimensions.width,
-            height: dimensions.height,
+            ...(metadata.width ? { width: metadata.width } : {}),
+            ...(metadata.height ? { height: metadata.height } : {}),
+            ...(metadata.durationSeconds ? { duration_seconds: metadata.durationSeconds } : {}),
           },
           representations: [{
             representation_id: `representation.original-${assetSha.slice(0, 16)}`,
             kind: 'ORIGINAL',
             sha256: assetSha,
-            media_type: mediaType(asset),
+            media_type: metadata.mediaType,
             size_bytes: asset.size,
             locator: { kind: 'WHOLE_ASSET' },
           }],
@@ -194,13 +243,21 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
         allowed_audiences: [audience],
         allowed_brand_profiles: ['default'],
         allowed_territories: [territory.toUpperCase()],
-        required_component_ids: [
-          'provenance.c2pa',
-          'provenance.independent-forensics',
-          'rights.local-image-registry',
-          'rights.licence-evaluator',
-          'rights.trademark-localizer',
-        ],
+        required_component_ids: metadata.kind === 'AUDIO'
+          ? [
+              'provenance.c2pa',
+              'ingestion.pcm-wav-parser',
+              'rights.voice-consent',
+              'rights.licence-evaluator',
+            ]
+          : [
+              'provenance.c2pa',
+              'provenance.independent-forensics',
+              'rights.local-image-registry',
+              'rights.licence-evaluator',
+              'rights.trademark-localizer',
+              ...(metadata.kind === 'VIDEO' ? ['ingestion.video-timeline-analyzer'] : []),
+            ],
         require_known_provenance: true,
         require_rights_clearance: true,
         block_tampered_provenance: true,
@@ -293,9 +350,9 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
             </div>
             <div className="rg-intake-grid">
               <label className={`rg-drop ${asset ? 'ready' : ''}`}>
-                <input type="file" accept="image/png,image/jpeg" onChange={(event) => setAsset(event.target.files?.[0] ?? null)} />
-                {assetUrl ? <img src={assetUrl} alt="Deployment asset preview" /> : <i>01</i>}
-                <span><strong>{asset?.name ?? 'Deployment asset'}</strong><small>PNG or JPEG · exact bytes assessed</small></span>
+                <input type="file" accept="image/png,image/jpeg,video/mp4,video/quicktime,audio/wav" onChange={(event) => setAsset(event.target.files?.[0] ?? null)} />
+                {assetUrl && asset && mediaType(asset).kind === 'VIDEO' ? <video src={assetUrl} muted /> : assetUrl && asset && mediaType(asset).kind === 'AUDIO' ? <audio src={assetUrl} controls /> : assetUrl ? <img src={assetUrl} alt="Deployment asset preview" /> : <i>01</i>}
+                <span><strong>{asset?.name ?? 'Deployment asset'}</strong><small>Image, bounded video or PCM/WAV · exact bytes assessed</small></span>
               </label>
               <label className={`rg-drop ${reference ? 'ready' : ''}`}>
                 <input type="file" accept="image/png,image/jpeg" onChange={(event) => setReference(event.target.files?.[0] ?? null)} />

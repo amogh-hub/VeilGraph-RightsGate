@@ -6,7 +6,9 @@ import base64
 import hashlib
 import io
 import json
+import wave
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 from cryptography.hazmat.primitives import serialization
@@ -16,6 +18,7 @@ from PIL import Image
 from pydantic import ValidationError
 
 from app.core.database import Database
+from app.extraction.video import physical_frame, probe_video
 from app.rightsgate import (
     AssessmentContext,
     AssessmentState,
@@ -73,6 +76,16 @@ def gradient_png(*, reverse: bool = False, width: int = 32, height: int = 24) ->
             image.putpixel((x, y), value)
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def pcm_wav(*, sample_rate: int = 8_000, frame_count: int = 800) -> bytes:
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as stream:
+        stream.setnchannels(1)
+        stream.setsampwidth(2)
+        stream.setframerate(sample_rate)
+        stream.writeframes(b"\x00\x00" * frame_count)
     return buffer.getvalue()
 
 
@@ -323,6 +336,159 @@ def test_end_to_end_reviews_when_required_detector_evidence_is_incomplete() -> N
     assert states["rights.trademark-localizer"] == ComponentState.DEGRADED
     assert assessment.rights.verdict == RightsVerdict.POTENTIAL_EXPOSURE
     assert assessment.deployment.claims[0].outcome.value == "UNKNOWN"
+
+
+def test_video_executor_change_screens_timeline_and_binds_frame_evidence() -> None:
+    video_path = Path(__file__).resolve().parents[1] / "test_video_privacy_demo.mp4"
+    data = video_path.read_bytes()
+    info = probe_video(data, video_path.name)
+    first_frame, _, _ = physical_frame(data, 0, video_path.name)
+    frame_buffer = io.BytesIO()
+    first_frame.save(frame_buffer, format="PNG")
+    reference_data = frame_buffer.getvalue()
+    digest = hashlib.sha256(data).hexdigest()
+    request = RightsGateAssessmentRequest(
+        idempotency_key="request.video-001",
+        asset_ir=AssetIR(
+            asset=AssetDescriptor(
+                asset_id="asset.video-001",
+                sha256=digest,
+                media_kind=MediaKind.VIDEO,
+                media_type="video/mp4",
+                size_bytes=len(data),
+                original_filename=video_path.name,
+                duration_seconds=info.duration_seconds,
+                width=info.width,
+                height=info.height,
+            ),
+            representations=(
+                AssetRepresentation(
+                    representation_id="representation.video-original-001",
+                    kind=RepresentationKind.ORIGINAL,
+                    sha256=digest,
+                    media_type="video/mp4",
+                    size_bytes=len(data),
+                    locator=EvidenceLocator(kind=LocatorKind.WHOLE_ASSET),
+                ),
+            ),
+        ),
+        context=assessment_request(gradient_png()).context,
+    )
+    assessment = execute_rightsgate_assessment(
+        data,
+        request=request,
+        rights_registry=rights_registry(reference_data),
+        licence_registry=licence_registry(),
+        policy=publication_policy(),
+        created_at=NOW,
+    )
+
+    components = {item.component_id: item for item in assessment.components}
+    sampler = components["ingestion.video-timeline-analyzer"]
+    assert sampler.state == ComponentState.AVAILABLE
+    assert assessment.asset.media_kind == MediaKind.VIDEO
+    assert assessment.deployment.decision == DeploymentDecision.REVIEW
+    assert assessment.evidence
+    assert all(item.asset_sha256 == digest for item in assessment.evidence)
+    assert any(
+        item.locator.kind in {LocatorKind.TIME_RANGE, LocatorKind.REGION}
+        and (
+            item.locator.kind == LocatorKind.TIME_RANGE
+            or item.locator.frame_index is not None
+        )
+        for item in assessment.evidence
+    )
+    assert any(
+        item.attributes.get("derived_frame_sha256")
+        for item in assessment.evidence
+    )
+
+
+def test_standalone_pcm_audio_is_processed_but_voice_rights_abstain() -> None:
+    data = pcm_wav()
+    digest = hashlib.sha256(data).hexdigest()
+    request = RightsGateAssessmentRequest(
+        idempotency_key="request.audio-001",
+        asset_ir=AssetIR(
+            asset=AssetDescriptor(
+                asset_id="asset.audio-001",
+                sha256=digest,
+                media_kind=MediaKind.AUDIO,
+                media_type="audio/wav",
+                size_bytes=len(data),
+                original_filename="voice.wav",
+                duration_seconds=0.1,
+            ),
+            representations=(
+                AssetRepresentation(
+                    representation_id="representation.audio-original-001",
+                    kind=RepresentationKind.ORIGINAL,
+                    sha256=digest,
+                    media_type="audio/wav",
+                    size_bytes=len(data),
+                    locator=EvidenceLocator(kind=LocatorKind.WHOLE_ASSET),
+                ),
+            ),
+        ),
+        context=assessment_request(gradient_png()).context,
+    )
+    reference = gradient_png()
+    assessment = execute_rightsgate_assessment(
+        data,
+        request=request,
+        rights_registry=rights_registry(reference),
+        licence_registry=licence_registry(),
+        policy=publication_policy(),
+        created_at=NOW,
+    )
+
+    components = {item.component_id: item for item in assessment.components}
+    assert components["ingestion.pcm-wav-parser"].state == ComponentState.AVAILABLE
+    assert components["rights.voice-consent"].state == ComponentState.UNAVAILABLE
+    assert assessment.provenance.verdict == ProvenanceVerdict.UNKNOWN
+    assert assessment.rights.state == AssessmentState.UNAVAILABLE
+    assert assessment.rights.verdict == RightsVerdict.UNKNOWN
+    assert assessment.deployment.decision == DeploymentDecision.REVIEW
+    assert any(item.source == "RightsGate bounded PCM/WAV parser" for item in assessment.evidence)
+
+
+def test_audio_rejects_truncated_pcm_payload() -> None:
+    data = pcm_wav()[:-2]
+    digest = hashlib.sha256(data).hexdigest()
+    request = RightsGateAssessmentRequest(
+        idempotency_key="request.audio-truncated",
+        asset_ir=AssetIR(
+            asset=AssetDescriptor(
+                asset_id="asset.audio-truncated",
+                sha256=digest,
+                media_kind=MediaKind.AUDIO,
+                media_type="audio/wav",
+                size_bytes=len(data),
+                original_filename="truncated.wav",
+                duration_seconds=0.1,
+            ),
+            representations=(
+                AssetRepresentation(
+                    representation_id="representation.audio-truncated",
+                    kind=RepresentationKind.ORIGINAL,
+                    sha256=digest,
+                    media_type="audio/wav",
+                    size_bytes=len(data),
+                    locator=EvidenceLocator(kind=LocatorKind.WHOLE_ASSET),
+                ),
+            ),
+        ),
+        context=assessment_request(gradient_png()).context,
+    )
+    with pytest.raises(ValueError, match="truncated"):
+        execute_rightsgate_assessment(
+            data,
+            request=request,
+            rights_registry=rights_registry(gradient_png()),
+            licence_registry=licence_registry(),
+            policy=publication_policy(),
+            created_at=NOW,
+        )
 
 
 def test_execution_fingerprint_binds_threshold_and_all_governed_inputs() -> None:

@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="VEILGRAPH_", extra="ignore")
 
     app_name: str = "VeilGraph RightsGate"
-    version: str = "0.3.0-rightsgate-prototype"
+    version: str = "0.4.0-rightsgate-prototype"
     offline_mode: bool = True
     bind_host: str = "127.0.0.1"
     bind_port: int = 8000
@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     max_image_pixels: int = 40_000_000
     rightsgate_execution_lease_seconds: int = 10 * 60
     rightsgate_max_control_json_bytes: int = 2 * 1024 * 1024
+    rightsgate_reviewer_registry_path: Path | None = None
+    rightsgate_release_authorization_ttl_seconds: int = 15 * 60
+    rightsgate_max_review_age_seconds: int = 24 * 60 * 60
     max_video_duration_seconds: float = 60.0
     max_video_frames: int = 3600
     max_video_width: int = 1920

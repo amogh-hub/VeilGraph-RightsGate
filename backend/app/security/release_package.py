@@ -7,8 +7,11 @@ import os
 import re
 import stat
 import zipfile
+import base64
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
+
+from .signing import public_key_b64, sign_payload, signer_fingerprint, verify_payload
 
 FORBIDDEN_PARTS = {
     ".git", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache",
@@ -74,7 +77,12 @@ def _scan_bytes(rel: str, data: bytes) -> None:
         raise ReleasePackageError(f"Private-key material detected in release candidate: {rel}")
 
 
-def build_release_package(root: Path, *, phase: str = "phase2") -> tuple[bytes, dict[str, Any]]:
+def build_release_package(
+    root: Path,
+    *,
+    phase: str = "phase2",
+    sign_manifest: bool = False,
+) -> tuple[bytes, dict[str, Any]]:
     root = root.resolve()
     entries: dict[str, str] = {}
     payloads: list[tuple[str, bytes]] = []
@@ -93,7 +101,19 @@ def build_release_package(root: Path, *, phase: str = "phase2") -> tuple[bytes, 
         "forbidden_runtime_databases": True,
         "forbidden_workspaces": True,
     }
-    manifest_bytes = json.dumps(manifest, sort_keys=True, indent=2).encode("utf-8") + b"\n"
+    manifest_document: dict[str, Any] = manifest
+    if sign_manifest:
+        manifest_document = {
+            "schema": "veilgraph.signed-release-envelope.v1",
+            "manifest": manifest,
+            "signature_algorithm": "Ed25519",
+            "signature_b64": sign_payload(manifest),
+            "public_key_b64": public_key_b64(),
+            "signer_fingerprint": signer_fingerprint(),
+        }
+    manifest_bytes = (
+        json.dumps(manifest_document, sort_keys=True, indent=2).encode("utf-8") + b"\n"
+    )
 
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
@@ -109,7 +129,11 @@ def build_release_package(root: Path, *, phase: str = "phase2") -> tuple[bytes, 
     return output.getvalue(), manifest
 
 
-def verify_release_package_bytes(package: bytes) -> dict[str, Any]:
+def verify_release_package_bytes(
+    package: bytes,
+    *,
+    expected_signer_fingerprint: str | None = None,
+) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
     def record(name: str, valid: bool, detail: str) -> None:
         checks.append({"name": name, "valid": bool(valid), "detail": detail})
@@ -135,7 +159,32 @@ def verify_release_package_bytes(package: bytes) -> dict[str, Any]:
             manifest_name = "veilgraph-release-manifest.json"
             if manifest_name not in names:
                 raise ReleasePackageError("Release manifest is missing")
-            manifest = json.loads(archive.read(manifest_name))
+            manifest_document = json.loads(archive.read(manifest_name))
+            signed = manifest_document.get("schema") == "veilgraph.signed-release-envelope.v1"
+            signer: str | None = None
+            if signed:
+                manifest = manifest_document.get("manifest")
+                if not isinstance(manifest, dict):
+                    raise ReleasePackageError("Signed release manifest payload is missing")
+                public_key = manifest_document.get("public_key_b64")
+                signature = manifest_document.get("signature_b64")
+                signer = manifest_document.get("signer_fingerprint")
+                if not all(isinstance(value, str) for value in (public_key, signature, signer)):
+                    raise ReleasePackageError("Signed release envelope fields are malformed")
+                try:
+                    public_raw = base64.b64decode(public_key, validate=True)
+                except ValueError as error:
+                    raise ReleasePackageError("Signed release public key is malformed") from error
+                if hashlib.sha256(public_raw).hexdigest() != signer:
+                    raise ReleasePackageError("Signed release signer fingerprint does not match")
+                if expected_signer_fingerprint is not None and signer != expected_signer_fingerprint:
+                    raise ReleasePackageError("Signed release signer is not the expected trust root")
+                if not verify_payload(manifest, signature, public_key):
+                    raise ReleasePackageError("Signed release manifest signature is invalid")
+            else:
+                if expected_signer_fingerprint is not None:
+                    raise ReleasePackageError("A signed release was required but the package is unsigned")
+                manifest = manifest_document
             entries = manifest.get("entries", {})
             if not isinstance(entries, dict):
                 raise ReleasePackageError("Release manifest entries are missing")
@@ -162,4 +211,12 @@ def verify_release_package_bytes(package: bytes) -> dict[str, Any]:
         return {"valid": False, "checks": checks}
 
     record("release_package", True, "Sanitized release package paths, exclusions and hashes are valid")
-    return {"valid": True, "checks": checks, "entry_count": int(manifest.get("entry_count", 0))}
+    if signed:
+        record("release_signature", True, "Ed25519 release manifest signature is valid")
+    return {
+        "valid": True,
+        "checks": checks,
+        "entry_count": int(manifest.get("entry_count", 0)),
+        "signed": signed,
+        "signer_fingerprint": signer,
+    }

@@ -63,6 +63,17 @@ from .store import (
     RightsGateAssessmentStore,
     StoredAssessmentIntegrityError,
 )
+from .release_authorization import (
+    RELEASE_RECEIPT_SCHEMA,
+    RELEASE_REQUEST_SCHEMA,
+    REVIEWER_REGISTRY_SCHEMA,
+    ReleaseAuthorizationReceipt,
+    ReleaseAuthorizationRequest,
+    ReleaseAuthorizationVerification,
+    ReviewerTrustRegistry,
+    build_release_authorization_receipt,
+    verify_release_authorization_receipt,
+)
 
 router = APIRouter(prefix="/api/v1/rightsgate", tags=["RightsGate"])
 assessment_store = RightsGateAssessmentStore(
@@ -147,6 +158,9 @@ def get_contracts() -> ContractBundleResponse:
             POLICY_SCHEMA: PublicationPolicy.model_json_schema(by_alias=True),
             CMS_REQUEST_SCHEMA: CMSDecisionRequest.model_json_schema(by_alias=True),
             CMS_RECEIPT_SCHEMA: CMSDecisionReceipt.model_json_schema(by_alias=True),
+            REVIEWER_REGISTRY_SCHEMA: ReviewerTrustRegistry.model_json_schema(by_alias=True),
+            RELEASE_REQUEST_SCHEMA: ReleaseAuthorizationRequest.model_json_schema(by_alias=True),
+            RELEASE_RECEIPT_SCHEMA: ReleaseAuthorizationReceipt.model_json_schema(by_alias=True),
         }
     )
 
@@ -450,4 +464,65 @@ def verify_cms_receipt(payload: CMSDecisionReceipt) -> CMSReceiptVerification:
     return CMSReceiptVerification(
         receipt_sha256=payload.receipt_sha256,
         valid=verify_cms_decision_receipt(payload),
+    )
+
+
+def _load_reviewer_registry() -> ReviewerTrustRegistry:
+    """Load the operator-controlled reviewer trust root, never caller data."""
+
+    path = settings.rightsgate_reviewer_registry_path
+    if path is None:
+        raise HTTPException(
+            status_code=503,
+            detail="release authorization is disabled: no reviewer trust registry configured",
+        )
+    try:
+        if path.is_symlink() or not path.is_file():
+            raise ValueError("reviewer trust registry must be a regular non-symlink file")
+        raw = path.read_bytes()
+        if len(raw) > settings.rightsgate_max_control_json_bytes:
+            raise ValueError("reviewer trust registry exceeds the control JSON limit")
+        return ReviewerTrustRegistry.model_validate_json(raw)
+    except (OSError, ValueError, PydanticValidationError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail=f"release authorization trust registry is unavailable: {error}",
+        ) from error
+
+
+@router.post(
+    "/integrations/cms/release-authorizations",
+    response_model=ReleaseAuthorizationReceipt,
+)
+def create_release_authorization(
+    payload: ReleaseAuthorizationRequest,
+) -> ReleaseAuthorizationReceipt:
+    """Authorize a short release window after GO and dual signed approval."""
+
+    registry = _load_reviewer_registry()
+    try:
+        return build_release_authorization_receipt(
+            payload,
+            registry=registry,
+            now=datetime.now(timezone.utc),
+            authorization_ttl_seconds=settings.rightsgate_release_authorization_ttl_seconds,
+            max_review_age_seconds=settings.rightsgate_max_review_age_seconds,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post(
+    "/integrations/cms/release-authorizations/verify",
+    response_model=ReleaseAuthorizationVerification,
+)
+def verify_release_authorization(
+    payload: ReleaseAuthorizationReceipt,
+) -> ReleaseAuthorizationVerification:
+    """Verify current signer, decision, approval, trust and expiry state."""
+
+    return verify_release_authorization_receipt(
+        payload,
+        registry=_load_reviewer_registry(),
+        now=datetime.now(timezone.utc),
     )

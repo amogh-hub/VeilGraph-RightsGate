@@ -40,7 +40,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 2 — Build the provenance lane
 
-**Status:** IN PROGRESS — offline C2PA verification, conservative IPTC mapping, bounded generator-metadata inspection and localized non-attributive residual triage are implemented. Signed fixtures, representative calibration, watermark attacks and video/audio adapters remain before exit.
+**Status:** IN PROGRESS — offline C2PA verification, conservative IPTC mapping, bounded generator-metadata inspection, localized non-attributive residual triage, video-frame adaptation and structural PCM/WAV processing are implemented. Signed fixtures, representative calibration, watermark attacks and audio-origin/voice models remain before exit.
 
 - Verify C2PA credentials and bind them to the exact asset bytes.
 - Inspect declared provenance metadata and supported invisible-watermark signals.
@@ -66,7 +66,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 4 — Compile policy and control release
 
-**Status:** IN PROGRESS — deterministic audience, brand-profile, channel, territory, scoped regulatory, provenance, rights and mandatory-component rules produce evidence-cited `GO`/`REVIEW`/`BLOCK`. Signed CMS decision receipts are implemented. Administered policy trust, human overrides, authenticated delivery, adversarial release verification and signed authorization remain.
+**Status:** IN PROGRESS — deterministic audience, brand-profile, channel, territory, scoped regulatory, provenance, rights and mandatory-component rules produce evidence-cited `GO`/`REVIEW`/`BLOCK`. Signed CMS decisions and a separate short-lived release authorization requiring distinct cryptographically trusted rights/release reviewers are implemented. Authenticated vendor delivery and operational reviewer provisioning remain.
 
 - Extend the versioned policy compiler for brand, regulatory, territory and intended-use rules.
 - Produce deterministic `GO`, `REVIEW` or `BLOCK` outcomes with cited rules.
@@ -79,7 +79,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 5 — Evaluate and demonstrate
 
-**Status:** IN PROGRESS — the RightsGate screen runs the integrated image workflow, exposes all three dimensions and produces a signed CMS workflow receipt. Frozen 32-case retrieval and 64-case localization/metadata-signal sets provide bounded accuracy/FPR evidence, but representative multi-dimension evaluation and rehearsed demo cases remain.
+**Status:** IN PROGRESS — the RightsGate screen runs image, bounded MP4/MOV and PCM/WAV workflows, exposes all three dimensions and produces a signed CMS workflow receipt. Frozen 32-case retrieval and 64-case localization/metadata-signal sets provide bounded accuracy/FPR, calibration and standards-only ablation evidence, but representative multi-dimension evaluation and rehearsed demo cases remain.
 
 - Build a legally sourced, versioned dataset and freeze train, validation and test families.
 - Compare metadata-only, C2PA-only, watermark-only and individual-detector baselines.
@@ -91,6 +91,8 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 **Exit:** every public metric is reproducible from a signed evaluation manifest.
 
 ### Gate 6 — Competition freeze
+
+**Status:** IN PROGRESS — sanitized package exclusions, an Ed25519-signed manifest envelope, pinned verification and adversarial package tests are implemented. The final public tag/release is not yet frozen.
 
 - Close challenge traceability and threat-model gaps.
 - Run dependency, secret and software-bill-of-materials checks.

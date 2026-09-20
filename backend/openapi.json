@@ -3,7 +3,7 @@
   "info": {
     "title": "VeilGraph RightsGate",
     "description": "Evidence-first pre-publication media trust gateway derived from VeilGraph. The API exposes the inherited privacy foundation plus versioned RightsGate contracts, offline C2PA inspection, governed image retrieval, licence evaluation, deterministic policy and durable non-authorizing image assessments.",
-    "version": "0.3.0-rightsgate-prototype"
+    "version": "0.4.0-rightsgate-prototype"
   },
   "paths": {
     "/api/v1/status": {
@@ -1514,6 +1514,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CMSReceiptVerification"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rightsgate/integrations/cms/release-authorizations": {
+      "post": {
+        "tags": [
+          "RightsGate"
+        ],
+        "summary": "Create Release Authorization",
+        "description": "Authorize a short release window after GO and dual signed approval.",
+        "operationId": "create_release_authorization_api_v1_rightsgate_integrations_cms_release_authorizations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseAuthorizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseAuthorizationReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rightsgate/integrations/cms/release-authorizations/verify": {
+      "post": {
+        "tags": [
+          "RightsGate"
+        ],
+        "summary": "Verify Release Authorization",
+        "description": "Verify current signer, decision, approval, trust and expiry state.",
+        "operationId": "verify_release_authorization_api_v1_rightsgate_integrations_cms_release_authorizations_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseAuthorizationReceipt"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseAuthorizationVerification"
                 }
               }
             }
@@ -4850,6 +4934,311 @@
         ],
         "title": "RegistryImage"
       },
+      "ReleaseApprovalPayload": {
+        "properties": {
+          "approval_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.release-approval.v1",
+            "title": "Approval Schema",
+            "default": "veilgraph.rightsgate.release-approval.v1"
+          },
+          "approval_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Approval Id"
+          },
+          "reviewer_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Reviewer Id"
+          },
+          "reviewer_role": {
+            "$ref": "#/components/schemas/ReviewerRole"
+          },
+          "cms_receipt_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Cms Receipt Sha256"
+          },
+          "assessment_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Assessment Sha256"
+          },
+          "asset_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Asset Sha256"
+          },
+          "cms_system_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Cms System Id"
+          },
+          "content_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Content Id"
+          },
+          "action": {
+            "type": "string",
+            "const": "APPROVE_RELEASE",
+            "title": "Action",
+            "default": "APPROVE_RELEASE"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 12,
+            "title": "Reason"
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Reviewed At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "approval_id",
+          "reviewer_id",
+          "reviewer_role",
+          "cms_receipt_sha256",
+          "assessment_sha256",
+          "asset_sha256",
+          "cms_system_id",
+          "content_id",
+          "reason",
+          "reviewed_at"
+        ],
+        "title": "ReleaseApprovalPayload"
+      },
+      "ReleaseAuthorizationPayload": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.release-authorization-payload.v1",
+            "title": "Schema",
+            "default": "veilgraph.rightsgate.release-authorization-payload.v1"
+          },
+          "authorization_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Authorization Id"
+          },
+          "cms_receipt_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Cms Receipt Sha256"
+          },
+          "assessment_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Assessment Sha256"
+          },
+          "asset_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Asset Sha256"
+          },
+          "cms_system_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Cms System Id"
+          },
+          "content_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Content Id"
+          },
+          "reviewer_registry_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Reviewer Registry Sha256"
+          },
+          "approval_sha256s": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 2,
+            "title": "Approval Sha256S"
+          },
+          "reviewer_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 2,
+            "title": "Reviewer Ids"
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Issued At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "release_authorization": {
+            "type": "boolean",
+            "const": true,
+            "title": "Release Authorization",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "authorization_id",
+          "cms_receipt_sha256",
+          "assessment_sha256",
+          "asset_sha256",
+          "cms_system_id",
+          "content_id",
+          "reviewer_registry_sha256",
+          "approval_sha256s",
+          "reviewer_ids",
+          "issued_at",
+          "expires_at"
+        ],
+        "title": "ReleaseAuthorizationPayload"
+      },
+      "ReleaseAuthorizationReceipt": {
+        "properties": {
+          "receipt_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.release-authorization-receipt.v1",
+            "title": "Receipt Schema",
+            "default": "veilgraph.rightsgate.release-authorization-receipt.v1"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ReleaseAuthorizationPayload"
+          },
+          "decision_receipt": {
+            "$ref": "#/components/schemas/CMSDecisionReceipt"
+          },
+          "approvals": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewerAttestation"
+            },
+            "type": "array",
+            "title": "Approvals"
+          },
+          "signature_algorithm": {
+            "type": "string",
+            "const": "Ed25519",
+            "title": "Signature Algorithm",
+            "default": "Ed25519"
+          },
+          "signature_b64": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Signature B64"
+          },
+          "public_key_b64": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Public Key B64"
+          },
+          "signer_fingerprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Signer Fingerprint"
+          },
+          "receipt_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Receipt Sha256"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "payload",
+          "decision_receipt",
+          "approvals",
+          "signature_b64",
+          "public_key_b64",
+          "signer_fingerprint",
+          "receipt_sha256"
+        ],
+        "title": "ReleaseAuthorizationReceipt"
+      },
+      "ReleaseAuthorizationRequest": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.release-authorization-request.v1",
+            "title": "Schema",
+            "default": "veilgraph.rightsgate.release-authorization-request.v1"
+          },
+          "decision_receipt": {
+            "$ref": "#/components/schemas/CMSDecisionReceipt"
+          },
+          "approvals": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewerAttestation"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 2,
+            "title": "Approvals"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "decision_receipt",
+          "approvals"
+        ],
+        "title": "ReleaseAuthorizationRequest"
+      },
+      "ReleaseAuthorizationVerification": {
+        "properties": {
+          "verification_schema": {
+            "type": "string",
+            "const": "veilgraph.rightsgate.release-authorization-verification.v1",
+            "title": "Verification Schema",
+            "default": "veilgraph.rightsgate.release-authorization-verification.v1"
+          },
+          "receipt_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Receipt Sha256"
+          },
+          "valid": {
+            "type": "boolean",
+            "title": "Valid"
+          },
+          "release_authorization": {
+            "type": "boolean",
+            "title": "Release Authorization"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "receipt_sha256",
+          "valid",
+          "release_authorization",
+          "reason"
+        ],
+        "title": "ReleaseAuthorizationVerification"
+      },
       "RepresentationKind": {
         "type": "string",
         "enum": [
@@ -4945,6 +5334,40 @@
           "IGNORE"
         ],
         "title": "ReviewStatus"
+      },
+      "ReviewerAttestation": {
+        "properties": {
+          "payload": {
+            "$ref": "#/components/schemas/ReleaseApprovalPayload"
+          },
+          "signature_algorithm": {
+            "type": "string",
+            "const": "Ed25519",
+            "title": "Signature Algorithm",
+            "default": "Ed25519"
+          },
+          "signature_b64": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Signature B64"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "payload",
+          "signature_b64"
+        ],
+        "title": "ReviewerAttestation"
+      },
+      "ReviewerRole": {
+        "type": "string",
+        "enum": [
+          "RIGHTS_REVIEWER",
+          "RELEASE_MANAGER"
+        ],
+        "title": "ReviewerRole"
       },
       "RightsAssessment": {
         "properties": {

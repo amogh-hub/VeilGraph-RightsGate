@@ -5,8 +5,23 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from run_rightsgate_eval import run
 from run_rightsgate_signal_eval import run as run_signal_evaluation
+from app.rightsgate.evaluation import calibration_metrics
+
+
+def test_calibration_metrics_reject_invalid_inputs_and_bin_edges() -> None:
+    metrics = calibration_metrics(
+        [False, False, True, True],
+        [0.0, 0.2, 0.8, 1.0],
+        bin_count=5,
+    )
+    assert metrics.sample_count == 4
+    assert metrics.brier_score == pytest.approx(0.02)
+    assert metrics.expected_calibration_error == pytest.approx(0.1)
+    assert metrics.maximum_calibration_error == 0.2
 
 
 def test_frozen_rights_retrieval_sanity_metrics_are_reproducible() -> None:
@@ -49,6 +64,14 @@ def test_frozen_challenge_signal_sanity_metrics_are_reproducible() -> None:
     assert report.generative_metadata.accuracy == 1
     assert report.generative_metadata.false_positive_rate == 0
     assert report.partial_edit_subtype_accuracy == 1
+    assert report.visual_localization_calibration.sample_count == 32
+    assert report.visual_localization_calibration.brier_score < 0.001
+    assert report.generative_metadata_calibration.sample_count == 32
+    assert report.generative_metadata_calibration.brier_score == 0.028125000000000008
+    assert report.standards_ablation.credentials_or_watermark_evidence_cases == 0
+    assert report.standards_ablation.credentials_or_watermark_only.recall == 0
+    assert report.standards_ablation.full_signal_pipeline.recall == 1
+    assert report.standards_ablation.accuracy_lift == 0.5
     assert any("not a representative" in item for item in report.limitations)
 
     summary_path = (
@@ -63,3 +86,10 @@ def test_frozen_challenge_signal_sanity_metrics_are_reproducible() -> None:
     assert summary["registry_sha256"] == report.registry_sha256
     assert summary["visual_localization"] == report.visual_localization.model_dump(mode="json")
     assert summary["generative_metadata"] == report.generative_metadata.model_dump(mode="json")
+    assert summary["visual_localization_calibration"] == (
+        report.visual_localization_calibration.model_dump(mode="json")
+    )
+    assert summary["generative_metadata_calibration"] == (
+        report.generative_metadata_calibration.model_dump(mode="json")
+    )
+    assert summary["standards_ablation"] == report.standards_ablation.model_dump(mode="json")

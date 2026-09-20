@@ -18,7 +18,9 @@ from app.rightsgate import ProvenanceVerdict
 from app.rightsgate.evaluation import (
     ChallengeSignalEvaluationReport,
     SignalEvaluationCaseResult,
+    StandardsAblation,
     binary_metrics,
+    calibration_metrics,
 )
 from app.rightsgate.provenance import inspect_image_forensics
 from app.rightsgate.rights import (
@@ -197,8 +199,10 @@ def run(manifest_path: Path = DEFAULT_MANIFEST) -> ChallengeSignalEvaluationRepo
 
     localization_expected: list[bool] = []
     localization_predicted: list[bool] = []
+    localization_scores: list[float] = []
     metadata_expected: list[bool] = []
     metadata_predicted: list[bool] = []
+    metadata_scores: list[float] = []
     partial_correct: list[bool] = []
     results: list[SignalEvaluationCaseResult] = []
     for case in manifest["cases"]:
@@ -222,6 +226,11 @@ def run(manifest_path: Path = DEFAULT_MANIFEST) -> ChallengeSignalEvaluationRepo
             predicted = "MATCH" if match.candidate_reference_ids else "NO_MATCH"
             localization_expected.append(case["expected_label"] == "MATCH")
             localization_predicted.append(predicted == "MATCH")
+            localization_scores.append(
+                max((item.confidence for item in match.evidence), default=0.0)
+                if match.candidate_reference_ids
+                else 0.0
+            )
         else:
             data = metadata_candidate(int(case["seed"]), case["expected_label"])
             digest = _verify_fingerprint(case, data)
@@ -232,6 +241,12 @@ def run(manifest_path: Path = DEFAULT_MANIFEST) -> ChallengeSignalEvaluationRepo
             metadata_predicted.append(
                 inspection.assessment.verdict
                 in {ProvenanceVerdict.AI_GENERATED, ProvenanceVerdict.PARTIALLY_GENERATED}
+            )
+            metadata_scores.append(
+                inspection.assessment.confidence
+                if inspection.assessment.verdict
+                in {ProvenanceVerdict.AI_GENERATED, ProvenanceVerdict.PARTIALLY_GENERATED}
+                else 0.0
             )
             if case["expected_label"] == "PARTIALLY_GENERATED":
                 partial_correct.append(predicted == "PARTIALLY_GENERATED")
@@ -252,12 +267,36 @@ def run(manifest_path: Path = DEFAULT_MANIFEST) -> ChallengeSignalEvaluationRepo
             )
         )
 
+    combined_expected = localization_expected + metadata_expected
+    combined_predicted = localization_predicted + metadata_predicted
+    baseline_predictions = [False] * len(combined_expected)
+    baseline_metrics = binary_metrics(combined_expected, baseline_predictions)
+    full_metrics = binary_metrics(combined_expected, combined_predicted)
     return ChallengeSignalEvaluationReport(
         dataset_id=manifest["dataset_id"],
         manifest_sha256=_canonical_hash(manifest),
         registry_sha256=registry.commitment_sha256(),
         visual_localization=binary_metrics(localization_expected, localization_predicted),
+        visual_localization_calibration=calibration_metrics(
+            localization_expected,
+            localization_scores,
+        ),
         generative_metadata=binary_metrics(metadata_expected, metadata_predicted),
+        generative_metadata_calibration=calibration_metrics(
+            metadata_expected,
+            metadata_scores,
+        ),
+        standards_ablation=StandardsAblation(
+            sample_count=len(combined_expected),
+            # These byte-stable fixtures intentionally contain neither C2PA
+            # credentials nor invisible-watermark ground truth. That makes a
+            # standards/watermark-only baseline an explicit all-abstain lane.
+            credentials_or_watermark_evidence_cases=0,
+            credentials_or_watermark_only=baseline_metrics,
+            full_signal_pipeline=full_metrics,
+            accuracy_lift=full_metrics.accuracy - baseline_metrics.accuracy,
+            recall_lift=full_metrics.recall - baseline_metrics.recall,
+        ),
         partial_edit_subtype_accuracy=(
             sum(partial_correct) / len(partial_correct) if partial_correct else 0
         ),

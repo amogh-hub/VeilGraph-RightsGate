@@ -23,8 +23,8 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | API-02 | Durable idempotent assessment execution | IMPLEMENTED | Atomic SQLite leases, exact replay, conflict, expiry recovery and stored-commitment integrity tests |
 | API-03 | Derive governed image-reference records | IMPLEMENTED | Server-side hash/dHash derivation, upload validation and HTTP tests |
 | ING-01 | Process images | IMPLEMENTED | Exact hash/size/type/dimension binding and parser-safety tests in trusted execution |
-| ING-02 | Process video | INHERITED | Full-timeline and audio-track tests |
-| ING-03 | Process standalone audio | PLANNED | Decoder, canonicalization and malformed-file tests |
+| ING-02 | Process video | IMPLEMENTED | MP4/MOV byte/dimension/duration binding, every-physical-frame change screen, bounded selected-frame deep analysis, temporal/region evidence rebinding and automated execution test; audio-track rights analysis remains unavailable |
+| ING-03 | Process standalone audio | IMPLEMENTED | Bounded PCM/WAV header and complete-payload decoding, byte/duration binding, malformed/truncated rejection and explicit voice-rights abstention tests |
 | PROV-01 | Verify content credentials/C2PA | IMPLEMENTED | Official offline SDK adapter and no-manifest/status-mapping tests; signed, mismatched, stripped and replayed fixtures remain for `VALIDATED` |
 | PROV-02 | Assess wholly AI-generated media | IMPLEMENTED | C2PA and bounded self-declared generator-metadata evidence with synthetic sanity metrics; open-world visual attribution still requires a frozen multi-generator split |
 | PROV-03 | Assess partial generation or manipulation | IMPLEMENTED | Partial-edit declarations and localized non-attributive residual evidence are tested; representative splice/inpaint localization remains for `VALIDATED` |
@@ -40,14 +40,14 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | POLICY-03 | Clear `GO`/`REVIEW`/`BLOCK` outcome | IMPLEMENTED | Exact deterministic mapping, missing-component abstention and contract fail-closed tests |
 | POLICY-04 | Regulatory policy packs | IMPLEMENTED | Versioned context/verdict-scoped `REVIEW`/`BLOCK` rule engine and deterministic tests; curated legal rule content remains governed external input |
 | EVID-01 | Supporting evidence per dimension | IMPLEMENTED | Challenge evidence schema, byte binding, graph references and review UI inspection |
-| CONF-01 | Confidence per dimension | PLANNED | Calibration protocol, reliability plots and abstention tests |
+| CONF-01 | Confidence per dimension | VALIDATED | Frozen synthetic Brier score, fixed-bin ECE/MCE and score-boundary tests exist for localization and generator-metadata lanes; representative calibration remains |
 | FLOW-00 | Integrated RightsGate review UI | IMPLEMENTED | Image/reference intake and three-dimension evidence/decision workflow |
-| FLOW-01 | Integrate with an existing CMS workflow | IMPLEMENTED | UI-consumed CMS request/receipt schemas, immutable-assessment binding, deterministic Ed25519 receipt and verification endpoint; vendor authentication/webhook delivery remains |
+| FLOW-01 | Integrate with an existing CMS workflow | IMPLEMENTED | UI-consumed CMS decision schemas, immutable-assessment binding, Ed25519 receipt verification, and a separate short-lived dual-control release boundary with pinned reviewer roles/keys; vendor webhook delivery remains |
 | EVAL-00 | Reproducible component sanity evaluation | VALIDATED | Frozen 32-case retrieval and 64-case challenge-signal manifests, byte hashes, exact-only ablation and checked-in bounded results |
 | EVAL-01 | Declare test set | IMPLEMENTED | Versioned frozen synthetic manifests and byte fingerprints exist; representative legally sourced family splits remain |
 | EVAL-02 | State accuracy and false-positive rate | VALIDATED | Bounded synthetic accuracy/FPR for perceptual retrieval, localization and metadata markers; no challenge-wide or real-world metric claim |
-| EVAL-03 | Go beyond standards/watermarking | PLANNED | Baseline and ablation comparison against the full system |
-| SEC-01 | Protect assets, references and audit evidence | INHERITED | Updated threat model, security tests and signed release proof |
+| EVAL-03 | Go beyond standards/watermarking | VALIDATED | Frozen 64-case synthetic all-abstain credentials/watermark-only baseline versus full signal pipeline; representative credential/watermark attack ablation remains |
+| SEC-01 | Protect assets, references and audit evidence | IMPLEMENTED | Updated threat model, secret/runtime exclusions, signed sanitized release-envelope builder, pinned signer verification and release-tampering tests; published competition tag remains |
 
 ## Release rule
 

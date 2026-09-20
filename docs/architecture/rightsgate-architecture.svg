@@ -40,28 +40,27 @@
   <text x="122" y="284" class="kicker">MEDIA IN</text>
   <g>
     <rect x="122" y="309" width="112" height="42" rx="21" fill="#1e3352"/><text x="178" y="336" text-anchor="middle" class="chip">IMAGE</text>
-    <rect x="244" y="309" width="112" height="42" rx="21" fill="#1e3352"/><text x="300" y="336" text-anchor="middle" class="chip">VIDEO</text>
-    <rect x="366" y="309" width="112" height="42" rx="21" fill="#1e3352"/><text x="422" y="336" text-anchor="middle" class="chip">AUDIO</text>
-    <rect x="488" y="309" width="112" height="42" rx="21" fill="#1e3352"/><text x="544" y="336" text-anchor="middle" class="chip">DOC</text>
+    <rect x="244" y="309" width="172" height="42" rx="21" fill="#1e3352"/><text x="330" y="336" text-anchor="middle" class="chip">VIDEO · BOUNDED</text>
+    <rect x="426" y="309" width="190" height="42" rx="21" fill="#1e3352"/><text x="521" y="336" text-anchor="middle" class="chip">AUDIO · PCM/WAV</text>
   </g>
 
   <line x1="122" y1="382" x2="1478" y2="382" stroke="#28405e" stroke-width="2"/>
 
   <g transform="translate(122 416)">
     <rect width="396" height="210" rx="24" fill="#172554" stroke="#6366f1" stroke-width="2"/>
-    <rect x="22" y="22" width="174" height="29" rx="14" fill="#a78bfa"/><text x="109" y="42" text-anchor="middle" class="label">IMAGE · IMPLEMENTED</text>
+    <rect x="22" y="22" width="206" height="29" rx="14" fill="#a78bfa"/><text x="125" y="42" text-anchor="middle" class="label">MEDIA · IMPLEMENTED</text>
     <text x="22" y="88" class="cardTitle">Provenance</text>
-    <text x="22" y="121" class="body">C2PA + metadata continuity</text>
-    <text x="22" y="150" class="body">Watermark and tamper forensics</text>
-    <text x="22" y="179" class="body">Whole / region / timeline evidence</text>
+    <text x="22" y="121" class="body">C2PA + generator metadata</text>
+    <text x="22" y="150" class="body">Residual anomaly triage</text>
+    <text x="22" y="179" class="body">Asset / frame / timeline evidence</text>
   </g>
 
   <g transform="translate(602 416)">
     <rect width="396" height="210" rx="24" fill="#173047" stroke="#22d3ee" stroke-width="2"/>
-    <rect x="22" y="22" width="174" height="29" rx="14" fill="#67e8f9"/><text x="109" y="42" text-anchor="middle" class="label">IMAGE · IMPLEMENTED</text>
+    <rect x="22" y="22" width="206" height="29" rx="14" fill="#67e8f9"/><text x="125" y="42" text-anchor="middle" class="label">VISUAL · IMPLEMENTED</text>
     <text x="22" y="88" class="cardTitle">Rights exposure</text>
-    <text x="22" y="121" class="body">Copyright similarity + trademarks</text>
-    <text x="22" y="150" class="body">Consented likeness / voice registry</text>
+    <text x="22" y="121" class="body">Reference retrieval + trademarks</text>
+    <text x="22" y="150" class="body">Voice / likeness abstain explicitly</text>
     <text x="22" y="179" class="body">Licence, territory and usage links</text>
   </g>
 
@@ -70,8 +69,8 @@
     <rect x="22" y="22" width="144" height="29" rx="14" fill="#6ee7b7"/><text x="94" y="42" text-anchor="middle" class="label">VEILGRAPH CORE</text>
     <text x="22" y="88" class="cardTitle">Deployment readiness</text>
     <text x="22" y="121" class="body">Policy-as-code by brand / region</text>
-    <text x="22" y="150" class="body">Human review for uncertainty</text>
-    <text x="22" y="179" class="body">Deterministic, fail-closed release</text>
+    <text x="22" y="150" class="body">Signed dual-role human approval</text>
+    <text x="22" y="179" class="body">Short-lived fail-closed release</text>
   </g>
 
   <path d="M320 644 C320 684 566 670 686 694" fill="none" stroke="#67e8f9" stroke-width="3" marker-end="url(#arrow)" opacity="0.9"/>
@@ -85,8 +84,8 @@
   </g>
 
   <g transform="translate(82 788)">
-    <text x="0" y="25" class="kicker">SIGNED WORKFLOW DECISION</text>
-    <text x="0" y="57" class="small">Local-first • source-level evidence • versioned policy • non-authorizing Ed25519 receipt</text>
+    <text x="0" y="25" class="kicker">SIGNED DECISION + SEPARATE RELEASE AUTHORIZATION</text>
+    <text x="0" y="57" class="small">Local-first • evidence-bound policy • role-separated Ed25519 approvals • expiry</text>
   </g>
 
   <g transform="translate(1116 788)">

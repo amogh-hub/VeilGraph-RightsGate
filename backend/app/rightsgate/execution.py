@@ -11,10 +11,16 @@ from typing import Any
 import c2pa
 from PIL import Image
 
+from app.core.config import settings
 from app.core.enums import FileType
+from app.extraction.video import probe_video
 from app.ingestion.validator import ValidationError as UploadValidationError
 from app.ingestion.validator import sanitize_filename, validate_upload
 
+from .audio_analysis import (
+    COMPONENT_VERSION as AUDIO_ANALYZER_COMPONENT_VERSION,
+    inspect_pcm_wav,
+)
 from .contracts import (
     AssessmentState,
     AssetExposureGraph,
@@ -56,6 +62,10 @@ from .rights import (
 from .rights.image_registry import COMPONENT_VERSION as IMAGE_REGISTRY_COMPONENT_VERSION
 from .rights.licensing import COMPONENT_VERSION as LICENCE_COMPONENT_VERSION
 from .rights.localization import COMPONENT_VERSION as LOCALIZER_COMPONENT_VERSION
+from .video_analysis import (
+    COMPONENT_VERSION as VIDEO_ANALYZER_COMPONENT_VERSION,
+    analyze_video_visuals,
+)
 
 KNOWN_UNIMPLEMENTED_COMPONENTS: dict[str, tuple[str, str]] = {
     "provenance.watermark-forensics": (
@@ -71,7 +81,7 @@ KNOWN_UNIMPLEMENTED_COMPONENTS: dict[str, tuple[str, str]] = {
         "Consented voice comparison is not implemented.",
     ),
 }
-EXECUTOR_VERSION = "1.1.0"
+EXECUTOR_VERSION = "1.2.0"
 EXECUTOR_COMPONENT_ID = "orchestration.executor"
 
 
@@ -104,7 +114,13 @@ def execution_fingerprint(
                 "rights.local-image-registry": IMAGE_REGISTRY_COMPONENT_VERSION,
                 "rights.licence-evaluator": LICENCE_COMPONENT_VERSION,
                 "rights.trademark-localizer": LOCALIZER_COMPONENT_VERSION,
+                "ingestion.video-timeline-analyzer": VIDEO_ANALYZER_COMPONENT_VERSION,
+                "ingestion.pcm-wav-parser": AUDIO_ANALYZER_COMPONENT_VERSION,
                 "deployment.policy-compiler": POLICY_COMPONENT_VERSION,
+            },
+            "video_analysis": {
+                "max_deep_frames": settings.max_video_evidence_frames,
+                "sample_fps": settings.video_evidence_sample_fps,
             },
             "max_hamming_distance": max_hamming_distance,
             "policy_sha256": policy.commitment_sha256(),
@@ -142,6 +158,28 @@ def validate_governed_inputs(
 
 def validate_execution_asset(data: bytes, request: RightsGateAssessmentRequest) -> None:
     descriptor = request.asset_ir.asset
+    if descriptor.media_kind == MediaKind.AUDIO:
+        if not data or len(data) > settings.max_file_size_bytes:
+            raise ExecutionInputError("audio is empty or exceeds the configured upload limit")
+        if not sanitize_filename(descriptor.original_filename).lower().endswith(".wav"):
+            raise ExecutionInputError("standalone audio currently requires a .wav filename")
+        if descriptor.media_type not in {"audio/wav", "audio/x-wav"}:
+            raise ExecutionInputError("standalone audio currently requires audio/wav")
+        actual_sha256 = hashlib.sha256(data).hexdigest()
+        if actual_sha256 != descriptor.sha256:
+            raise ExecutionInputError("uploaded bytes do not match the AssetIR SHA-256")
+        if len(data) != descriptor.size_bytes:
+            raise ExecutionInputError("uploaded bytes do not match the AssetIR size")
+        try:
+            inspected = inspect_pcm_wav(data, asset_sha256=descriptor.sha256)
+        except ValueError as error:
+            raise ExecutionInputError(str(error)) from error
+        assert descriptor.duration_seconds is not None
+        if abs(inspected.stream.duration_seconds - descriptor.duration_seconds) > (
+            1 / inspected.stream.sample_rate_hz
+        ):
+            raise ExecutionInputError("decoded audio duration does not match the AssetIR")
+        return
     try:
         file_type, media_type, actual_sha256 = validate_upload(
             data,
@@ -149,21 +187,38 @@ def validate_execution_asset(data: bytes, request: RightsGateAssessmentRequest) 
         )
     except UploadValidationError as error:
         raise ExecutionInputError(str(error)) from error
-    if file_type != FileType.IMAGE or descriptor.media_kind != MediaKind.IMAGE:
+    expected_file_type = {
+        MediaKind.IMAGE: FileType.IMAGE,
+        MediaKind.VIDEO: FileType.VIDEO,
+    }.get(descriptor.media_kind)
+    if expected_file_type is None:
         raise ExecutionInputError(
-            "the current trusted executor accepts image assets only; "
-            "video and audio remain fail-closed"
+            "the current trusted executor accepts image, bounded video and PCM/WAV audio assets"
         )
+    if file_type != expected_file_type:
+        raise ExecutionInputError("detected media kind does not match the AssetIR media kind")
     if actual_sha256 != descriptor.sha256:
         raise ExecutionInputError("uploaded bytes do not match the AssetIR SHA-256")
     if len(data) != descriptor.size_bytes:
         raise ExecutionInputError("uploaded bytes do not match the AssetIR size")
     if media_type != descriptor.media_type:
         raise ExecutionInputError("detected media type does not match the AssetIR media type")
-    with Image.open(io.BytesIO(data)) as image:
-        width, height = image.size
-    if (width, height) != (descriptor.width, descriptor.height):
-        raise ExecutionInputError("decoded image dimensions do not match the AssetIR")
+    if descriptor.media_kind == MediaKind.IMAGE:
+        with Image.open(io.BytesIO(data)) as image:
+            width, height = image.size
+        if (width, height) != (descriptor.width, descriptor.height):
+            raise ExecutionInputError("decoded image dimensions do not match the AssetIR")
+    else:
+        info = probe_video(data, descriptor.original_filename)
+        if descriptor.width is None or descriptor.height is None:
+            raise ExecutionInputError("video AssetIR requires decoded width and height")
+        if (info.width, info.height) != (descriptor.width, descriptor.height):
+            raise ExecutionInputError("decoded video dimensions do not match the AssetIR")
+        assert descriptor.duration_seconds is not None
+        # Container frame counts can differ by less than one frame across
+        # decoders. Anything outside that tolerance is a binding failure.
+        if abs(info.duration_seconds - descriptor.duration_seconds) > 1 / info.fps:
+            raise ExecutionInputError("decoded video duration does not match the AssetIR")
 
 
 def _combine_rights(
@@ -460,47 +515,106 @@ def execute_rightsgate_assessment(
     )
 
     c2pa_result = verify_c2pa(data, descriptor.media_type, descriptor.sha256)
-    forensic_result = inspect_image_forensics(
-        data,
-        asset_sha256=descriptor.sha256,
-    )
-    provenance = _combine_provenance(
-        c2pa_result.assessment,
-        forensic_result.assessment,
-    )
-    image_result = match_reference_image(
-        data,
-        asset_sha256=descriptor.sha256,
-        registry=rights_registry,
-        max_hamming_distance=max_hamming_distance,
-    )
-    localization_result = localize_reference_images(
-        data,
-        asset_sha256=descriptor.sha256,
-        registry=rights_registry,
-    )
+    if descriptor.media_kind == MediaKind.IMAGE:
+        forensic_result = inspect_image_forensics(
+            data,
+            asset_sha256=descriptor.sha256,
+        )
+        provenance = _combine_provenance(
+            c2pa_result.assessment,
+            forensic_result.assessment,
+        )
+        image_result = match_reference_image(
+            data,
+            asset_sha256=descriptor.sha256,
+            registry=rights_registry,
+            max_hamming_distance=max_hamming_distance,
+        )
+        localization_result = localize_reference_images(
+            data,
+            asset_sha256=descriptor.sha256,
+            registry=rights_registry,
+        )
+        lane_components = (
+            forensic_result.component,
+            image_result.component,
+            localization_result.component,
+        )
+        lane_evidence = (
+            forensic_result.evidence
+            + image_result.evidence
+            + localization_result.evidence
+        )
+    elif descriptor.media_kind == MediaKind.VIDEO:
+        video_result = analyze_video_visuals(
+            data,
+            source_filename=descriptor.original_filename,
+            asset_sha256=descriptor.sha256,
+            registry=rights_registry,
+            max_hamming_distance=max_hamming_distance,
+            max_deep_frames=settings.max_video_evidence_frames,
+        )
+        provenance = _combine_provenance(
+            c2pa_result.assessment,
+            video_result.forensic_assessment,
+        )
+        image_result = video_result.image_match
+        localization_result = video_result.localization
+        lane_components = (
+            video_result.sampler_component,
+            *video_result.detector_components,
+        )
+        lane_evidence = video_result.evidence
+        licence_additional_evidence = localization_result.evidence
+        direct_audio_rights = None
+    else:
+        audio_result = inspect_pcm_wav(data, asset_sha256=descriptor.sha256)
+        provenance = _combine_provenance(c2pa_result.assessment, audio_result.provenance)
+        image_result = RightsImageMatchResult(
+            component=audio_result.component,
+            evidence=(),
+            assessment=audio_result.rights,
+        )
+        lane_components = (
+            audio_result.component,
+            _declared_unavailable_component("rights.voice-consent"),
+        )
+        lane_evidence = audio_result.evidence
+        licence_additional_evidence = ()
+        direct_audio_rights = audio_result.rights
+    if descriptor.media_kind == MediaKind.IMAGE:
+        licence_additional_evidence = localization_result.evidence
+        direct_audio_rights = None
     licence_result = evaluate_candidate_licences(
         image_result,
         asset_sha256=descriptor.sha256,
         context=request.context,
         registry=licence_registry,
         assessed_at=created_at,
-        additional_evidence=localization_result.evidence,
+        additional_evidence=licence_additional_evidence,
     )
-    rights = _combine_rights(image_result, localization_result, licence_result)
+    if direct_audio_rights is None:
+        rights = _combine_rights(image_result, localization_result, licence_result)
+    else:
+        rights = direct_audio_rights.model_copy(
+            update={
+                "claims": direct_audio_rights.claims + licence_result.claims,
+                "limitations": tuple(
+                    sorted(set(direct_audio_rights.limitations + licence_result.limitations))
+                ),
+            }
+        )
 
     components = [
         ComponentRecord(
             component_id=EXECUTOR_COMPONENT_ID,
             component_version=EXECUTOR_VERSION,
-            component_type="orchestration.trusted-image-executor",
+            component_type="orchestration.trusted-media-executor",
             state=ComponentState.AVAILABLE,
             mandatory=True,
         ),
         c2pa_result.component,
-        forensic_result.component,
-        image_result.component,
-        localization_result.component,
+        *lane_components,
         licence_result.component,
     ]
     present = {item.component_id for item in components}
@@ -522,9 +636,7 @@ def execute_rightsgate_assessment(
     evidence = tuple(
         sorted(
             c2pa_result.evidence
-            + forensic_result.evidence
-            + image_result.evidence
-            + localization_result.evidence
+            + lane_evidence
             + licence_result.evidence
             + policy_result.evidence,
             key=lambda item: item.evidence_id,

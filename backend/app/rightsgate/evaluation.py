@@ -23,6 +23,34 @@ class BinaryClassificationMetrics(StrictFrozenModel):
     recall: float = Field(ge=0, le=1)
 
 
+class CalibrationMetrics(StrictFrozenModel):
+    """Bounded binary-score calibration statistics.
+
+    Scores are interpreted as probabilities only inside the declared evaluation
+    set. A perfect synthetic result must not be promoted to an open-world model
+    calibration claim.
+    """
+
+    sample_count: int = Field(gt=0)
+    bin_count: int = Field(gt=0, le=100)
+    brier_score: float = Field(ge=0, le=1)
+    expected_calibration_error: float = Field(ge=0, le=1)
+    maximum_calibration_error: float = Field(ge=0, le=1)
+    mean_score: float = Field(ge=0, le=1)
+    empirical_positive_rate: float = Field(ge=0, le=1)
+
+
+class StandardsAblation(StrictFrozenModel):
+    """Comparison against a credentials/watermark-only decision baseline."""
+
+    sample_count: int = Field(gt=0)
+    credentials_or_watermark_evidence_cases: int = Field(ge=0)
+    credentials_or_watermark_only: BinaryClassificationMetrics
+    full_signal_pipeline: BinaryClassificationMetrics
+    accuracy_lift: float = Field(ge=-1, le=1)
+    recall_lift: float = Field(ge=-1, le=1)
+
+
 class EvaluationCaseResult(StrictFrozenModel):
     case_id: str
     expected_match: bool
@@ -66,7 +94,10 @@ class ChallengeSignalEvaluationReport(StrictFrozenModel):
     manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     registry_sha256: str = Field(pattern=SHA256_PATTERN)
     visual_localization: BinaryClassificationMetrics
+    visual_localization_calibration: CalibrationMetrics
     generative_metadata: BinaryClassificationMetrics
+    generative_metadata_calibration: CalibrationMetrics
+    standards_ablation: StandardsAblation
     partial_edit_subtype_accuracy: float = Field(ge=0, le=1)
     cases: tuple[SignalEvaluationCaseResult, ...]
     limitations: tuple[str, ...]
@@ -92,4 +123,55 @@ def binary_metrics(expected: list[bool], predicted: list[bool]) -> BinaryClassif
         false_positive_rate=false_positive / negatives if negatives else 0,
         precision=true_positive / predicted_positive if predicted_positive else 0,
         recall=true_positive / positives if positives else 0,
+    )
+
+
+def calibration_metrics(
+    expected: list[bool],
+    scores: list[float],
+    *,
+    bin_count: int = 10,
+) -> CalibrationMetrics:
+    """Calculate Brier score and fixed-width ECE without third-party state.
+
+    Empty bins are excluded from ECE/MCE. A score of exactly 1 belongs to the
+    final bin, and every other score belongs to ``floor(score * bin_count)``.
+    """
+
+    if not expected or len(expected) != len(scores):
+        raise ValueError("expected and scores must be non-empty and equal length")
+    if not 1 <= bin_count <= 100:
+        raise ValueError("bin_count must be between 1 and 100")
+    if any(score < 0 or score > 1 for score in scores):
+        raise ValueError("calibration scores must be between zero and one")
+
+    total = len(expected)
+    brier = sum(
+        (score - (1.0 if label else 0.0)) ** 2
+        for label, score in zip(expected, scores, strict=True)
+    ) / total
+    weighted_gap = 0.0
+    maximum_gap = 0.0
+    for bin_index in range(bin_count):
+        members = [
+            index
+            for index, score in enumerate(scores)
+            if min(int(score * bin_count), bin_count - 1) == bin_index
+        ]
+        if not members:
+            continue
+        average_score = sum(scores[index] for index in members) / len(members)
+        positive_rate = sum(expected[index] for index in members) / len(members)
+        gap = abs(average_score - positive_rate)
+        weighted_gap += len(members) / total * gap
+        maximum_gap = max(maximum_gap, gap)
+
+    return CalibrationMetrics(
+        sample_count=total,
+        bin_count=bin_count,
+        brier_score=brier,
+        expected_calibration_error=weighted_gap,
+        maximum_calibration_error=maximum_gap,
+        mean_score=sum(scores) / total,
+        empirical_positive_rate=sum(expected) / total,
     )

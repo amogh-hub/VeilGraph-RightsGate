@@ -68,6 +68,7 @@ export type RightsGateAssessment = {
     media_type: string
     size_bytes: number
     original_filename: string
+    duration_seconds?: number
     width?: number
     height?: number
   }
