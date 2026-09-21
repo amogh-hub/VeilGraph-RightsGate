@@ -18,7 +18,17 @@ FORBIDDEN_PARTS = {
     ".mypy_cache", ".ruff_cache", ".veilgraph", ".veilgraph-hotfix-backups",
     "dist", "build", ".idea", ".vscode",
 }
-FORBIDDEN_SUFFIXES = {".pyc", ".pyo", ".db", ".sqlite", ".sqlite3", ".key", ".pem", ".log"}
+FORBIDDEN_SUFFIXES = {
+    ".pyc",
+    ".pyo",
+    ".db",
+    ".sqlite",
+    ".sqlite3",
+    ".key",
+    ".pem",
+    ".log",
+    ".tsbuildinfo",
+}
 FORBIDDEN_NAMES = {".env", ".env.local", ".env.production", ".DS_Store"}
 PRIVATE_KEY_BLOCK_RE = re.compile(
     br"(?:^|\n)-----BEGIN (?:OPENSSH |RSA |EC )?PRIVATE KEY-----\s*\n[A-Za-z0-9+/=]{20,}",

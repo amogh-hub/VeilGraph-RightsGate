@@ -192,6 +192,7 @@ def test_sanitized_release_excludes_runtime_secrets_and_database(tmp_path):
     (tmp_path / ".veilgraph").mkdir()
     (tmp_path / ".veilgraph/device-ed25519.key").write_bytes(b"PRIVATE")
     (tmp_path / "state.db").write_bytes(b"sqlite")
+    (tmp_path / "frontend.tsbuildinfo").write_text("build cache")
     (tmp_path / ".env").write_text("TOKEN=secret")
     package, manifest = build_release_package(tmp_path, phase="test")
     assert manifest["entry_count"] == 1
@@ -200,6 +201,7 @@ def test_sanitized_release_excludes_runtime_secrets_and_database(tmp_path):
         assert "backend/app.py" in names
         assert not any(".veilgraph" in name for name in names)
         assert "state.db" not in names
+        assert "frontend.tsbuildinfo" not in names
         assert ".env" not in names
     assert verify_release_package_bytes(package)["valid"] is True
 
