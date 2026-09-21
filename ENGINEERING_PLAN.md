@@ -40,7 +40,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 2 — Build the provenance lane
 
-**Status:** IN PROGRESS — offline C2PA verification, conservative IPTC mapping, bounded generator-metadata inspection, localized non-attributive residual triage, video-frame adaptation and structural PCM/WAV processing are implemented. Signed fixtures, representative calibration, watermark attacks and audio-origin/voice models remain before exit.
+**Status:** IN PROGRESS — offline C2PA verification, conservative IPTC mapping, generator-metadata inspection, residual triage, video-frame adaptation and governed visible-watermark region verification are implemented. Signed C2PA fixtures, representative calibration, arbitrary invisible-watermark attacks and audio-origin models remain before exit.
 
 - Verify C2PA credentials and bind them to the exact asset bytes.
 - Inspect declared provenance metadata and supported invisible-watermark signals.
@@ -53,7 +53,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 3 — Build the rights lane
 
-**Status:** IN PROGRESS — a versioned local image-reference registry, exact/perceptual retrieval, ORB/RANSAC region localization and deterministic licence status/date/territory/channel/intended-use evaluation are implemented. Consent, likeness, voice, open-world semantics and representative benchmark work remain before exit.
+**Status:** IN PROGRESS — versioned work/mark and consent registries, exact/perceptual retrieval, ORB/RANSAC localization, bounded likeness/acoustic-reference matching and deterministic licence/consent scope evaluation are implemented. Open-world semantics and representative legally sourced benchmark work remain before exit.
 
 - Create a governed reference registry with works, logos, licences, consent and territory.
 - Add perceptual and embedding-based candidate retrieval for image, video and audio.
@@ -79,7 +79,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 5 — Evaluate and demonstrate
 
-**Status:** IN PROGRESS — the RightsGate screen runs image, bounded MP4/MOV and PCM/WAV workflows, exposes all three dimensions and produces a signed CMS workflow receipt. Frozen 32-case retrieval and 64-case localization/metadata-signal sets provide bounded accuracy/FPR, calibration and standards-only ablation evidence, but representative multi-dimension evaluation and rehearsed demo cases remain.
+**Status:** IN PROGRESS — the RightsGate screen runs image, bounded MP4/MOV and PCM/WAV workflows, exposes all three dimensions and produces a signed CMS workflow receipt. Three frozen manifests now cover 192 retrieval, signal, visible-watermark and consent cases with bounded accuracy/FPR, calibration and ablation evidence; representative evaluation and rehearsed demo cases remain.
 
 - Build a legally sourced, versioned dataset and freeze train, validation and test families.
 - Compare metadata-only, C2PA-only, watermark-only and individual-detector baselines.
@@ -92,7 +92,7 @@ Build a local-first pre-publication gateway that assesses media provenance, righ
 
 ### Gate 6 — Competition freeze
 
-**Status:** IN PROGRESS — sanitized package exclusions, an Ed25519-signed manifest envelope, pinned verification, adversarial package tests and public version `v0.4.0-rightsgate-techgium` are complete. Portal-specific demo rehearsal and the final submission freeze remain.
+**Status:** RELEASED — sanitized package exclusions, an Ed25519-signed manifest envelope, pinned verification and adversarial package tests are complete in `v0.5.0-rightsgate-techgium`. Portal-specific demo rehearsal remains.
 
 - Close challenge traceability and threat-model gaps.
 - Run dependency, secret and software-bill-of-materials checks.

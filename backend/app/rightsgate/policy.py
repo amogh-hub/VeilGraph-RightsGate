@@ -100,6 +100,7 @@ class PublicationPolicy(StrictFrozenModel):
     require_rights_clearance: bool = True
     block_tampered_provenance: bool = True
     block_unlicensed_reference_match: bool = True
+    block_unconsented_identity_match: bool = True
     regulatory_rules: tuple[RegulatoryRule, ...] = ()
 
     @field_validator("allowed_channels", "allowed_audiences", "allowed_brand_profiles")
@@ -144,6 +145,7 @@ class PublicationPolicy(StrictFrozenModel):
                 self.require_rights_clearance,
                 self.block_tampered_provenance,
                 self.block_unlicensed_reference_match,
+                self.block_unconsented_identity_match,
                 bool(self.required_component_ids),
             )
         ):
@@ -243,7 +245,10 @@ def evaluate_publication_policy(
 
     if policy.block_tampered_provenance and provenance.verdict == ProvenanceVerdict.TAMPERED:
         block_reasons.append(
-            ("provenance.tampered", "Cryptographic provenance evidence indicates tampering.")
+            (
+                "provenance.tampered",
+                "Governed provenance or watermark evidence indicates tampering.",
+            )
         )
     elif provenance.verdict == ProvenanceVerdict.TAMPERED:
         review_reasons.append(
@@ -268,6 +273,16 @@ def evaluate_publication_policy(
                 "rights.licence-coverage",
                 "At least one governed reference candidate lacks licence coverage "
                 "for this context.",
+            )
+        )
+    elif (
+        rights.verdict == RightsVerdict.POLICY_CONFLICT
+        and policy.block_unconsented_identity_match
+    ):
+        block_reasons.append(
+            (
+                "rights.consent-coverage",
+                "At least one enrolled likeness or voice candidate lacks consent coverage for this context.",
             )
         )
     elif rights.verdict == RightsVerdict.POLICY_CONFLICT:

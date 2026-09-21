@@ -9,6 +9,7 @@ import pytest
 
 from run_rightsgate_eval import run
 from run_rightsgate_signal_eval import run as run_signal_evaluation
+from run_rightsgate_consent_eval import run as run_consent_evaluation
 from app.rightsgate.evaluation import calibration_metrics
 
 
@@ -93,3 +94,32 @@ def test_frozen_challenge_signal_sanity_metrics_are_reproducible() -> None:
         report.generative_metadata_calibration.model_dump(mode="json")
     )
     assert summary["standards_ablation"] == report.standards_ablation.model_dump(mode="json")
+
+
+def test_frozen_watermark_and_consent_sanity_metrics_are_reproducible() -> None:
+    report = run_consent_evaluation()
+
+    assert report["manifest_sha256"] == (
+        "17d944f5696aae28921256b7dd7164a397ead00a2ca640659d6fe6a4762443ae"
+    )
+    assert report["case_count"] == 96
+    for lane in (
+        "visible_watermark_tamper",
+        "likeness_reference",
+        "voice_reference",
+        "consent_scope_conflict",
+    ):
+        assert report[lane]["accuracy"] == 1
+        assert report[lane]["false_positive_rate"] == 0
+        assert report[lane]["recall"] == 1
+    assert "not a representative" in report["limitations"][0]
+
+    summary_path = (
+        Path(__file__).resolve().parents[2]
+        / "competition"
+        / "techgium10"
+        / "evaluation"
+        / "watermark-consent-sanity-results-v1.json"
+    )
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary == report

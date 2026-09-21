@@ -28,7 +28,7 @@ Assessment authority belongs to deterministic policy and verification code opera
 
 | Attack | Required control or test |
 |---|---|
-| Strip, forge or replay credentials/watermarks | Cryptographic byte binding, trust-chain validation, contradiction reporting and replay fixtures |
+| Strip, forge or replay credentials/watermarks | Cryptographic byte binding, trust-chain validation, enrolled visible-region verification, contradiction reporting and replay fixtures |
 | Crop, resize, re-encode, recolor or alter audio | Transformation-resilient retrieval with hard-negative testing |
 | Splice, inpaint or partially generate content | Region/timeline evidence and explicit localization uncertainty |
 | Obscure or distort marks | Multi-scale detection and false-positive controls |
@@ -37,7 +37,7 @@ Assessment authority belongs to deterministic policy and verification code opera
 | Detector crash, timeout or missing model | Typed unavailability evidence and `REVIEW`/`BLOCK`, never silent success |
 | Replay, duplicate callback or race | Idempotency keys, immutable assessment IDs and state-transition tests |
 | Policy or threshold substitution | Version pinning, signatures/hashes and authorization checks |
-| Biometric misuse | Consented local registry, scoped access, audit and deletion controls |
+| Biometric misuse or registry exfiltration | Consented local registry, no raw-reference persistence in derivation endpoints, scoped access, audit and deletion controls |
 | Evidence tampering | Asset/result binding, append-only audit commitments and signed proof |
 | Reviewer impersonation or self-approval | Operator-controlled key registry, pinned Ed25519 keys, role separation and distinct reviewer identities |
 | Stale/replayed release approval | Assessment/asset/CMS binding, approval freshness, short authorization TTL and current registry commitment |
@@ -58,7 +58,7 @@ Assessment authority belongs to deterministic policy and verification code opera
 ## Implemented execution controls
 
 - exact asset SHA-256, byte length, detected media type and decoded dimensions are checked before work is reserved;
-- rights, licence and policy registries have canonical commitments included in the execution fingerprint;
+- rights, licence, watermark, consent and policy registries have canonical commitments included in the execution fingerprint;
 - SQLite `BEGIN IMMEDIATE` reservations provide cross-process serialization with bounded recovery leases;
 - changed thresholds, policy or registry inputs conflict under a reused idempotency key;
 - completed assessment JSON is revalidated and recomputed against its stored commitment on replay;
@@ -67,9 +67,11 @@ Assessment authority belongs to deterministic policy and verification code opera
 - CMS decision receipts bind content, asset, request, execution and assessment commitments; Ed25519 verification detects payload, key or signature substitution, while the receipt remains explicitly non-authorizing.
 - dual-control release receipts bundle the CMS decision and reviewer attestations, bind their commitments, require current role-separated trust, expire after a bounded interval and fail verification after registry rotation/revocation;
 - video inputs bind dimensions and duration, change-screen every physical frame, and rebind derived image evidence to the original video hash plus temporal/frame-region coordinates;
-- standalone PCM/WAV inputs bind duration and decode the declared complete payload, while origin, likeness, voice and acoustic-work claims abstain rather than infer from container structure;
+- configured visible-watermark regions are compared with byte-bound governed templates; mismatches support tampering review/block, while intact regions do not imply general authenticity;
+- enrolled likeness and PCM/WAV acoustic-reference candidates are evaluated against consent validity, territory, channel and intended use; an uncovered match produces a policy conflict, while non-match does not provide open-world clearance;
+- standalone PCM/WAV inputs bind duration and decode the declared complete payload, while origin, speaker identity and acoustic-work claims abstain rather than infer from structure or reference similarity;
 - sanitized competition archives exclude keys, runtime databases and workspaces, enforce an exact member manifest, and support an Ed25519-signed envelope with optional signer pinning.
 
 ## Non-goals
 
-RightsGate does not guarantee detection of every generator or transformation, establish copyright ownership, make infringement findings, search arbitrary people, or turn absent provenance metadata into evidence of human authorship.
+RightsGate does not guarantee detection of every generator, watermark or transformation; establish copyright ownership; make infringement findings; identify arbitrary people or speakers; or turn absent provenance metadata into evidence of human authorship.

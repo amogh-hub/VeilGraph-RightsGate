@@ -47,14 +47,28 @@ from .integration import (
     verify_cms_decision_receipt,
 )
 from .policy import POLICY_SCHEMA, PublicationPolicy
-from .provenance import C2PAVerificationResult, verify_c2pa
+from .provenance import (
+    C2PAVerificationResult,
+    VisibleWatermarkProfile,
+    VisibleWatermarkRegistry,
+    build_visible_watermark_profile,
+    verify_c2pa,
+)
+from .provenance.watermark import WATERMARK_REGISTRY_SCHEMA
 from .rights import (
+    ConsentRegistry,
+    ConsentGrant,
+    LikenessTemplate,
     LicenceRegistry,
     ReferenceKind,
     RegistryImage,
     RightsReferenceRegistry,
+    VoiceTemplate,
+    build_likeness_template,
     build_registry_image,
+    build_voice_template,
 )
+from .rights.consent import CONSENT_REGISTRY_SCHEMA
 from .rights.image_registry import REGISTRY_SCHEMA
 from .rights.licensing import LICENCE_REGISTRY_SCHEMA
 from .store import (
@@ -156,6 +170,8 @@ def get_contracts() -> ContractBundleResponse:
             REGISTRY_SCHEMA: RightsReferenceRegistry.model_json_schema(by_alias=True),
             LICENCE_REGISTRY_SCHEMA: LicenceRegistry.model_json_schema(by_alias=True),
             POLICY_SCHEMA: PublicationPolicy.model_json_schema(by_alias=True),
+            WATERMARK_REGISTRY_SCHEMA: VisibleWatermarkRegistry.model_json_schema(by_alias=True),
+            CONSENT_REGISTRY_SCHEMA: ConsentRegistry.model_json_schema(by_alias=True),
             CMS_REQUEST_SCHEMA: CMSDecisionRequest.model_json_schema(by_alias=True),
             CMS_RECEIPT_SCHEMA: CMSDecisionReceipt.model_json_schema(by_alias=True),
             REVIEWER_REGISTRY_SCHEMA: ReviewerTrustRegistry.model_json_schema(by_alias=True),
@@ -255,6 +271,101 @@ def _parse_control_json(raw: str, model: type[ModelT], field_name: str) -> Model
         ) from error
 
 
+@router.post(
+    "/provenance/watermarks/visible/profiles",
+    response_model=VisibleWatermarkProfile,
+)
+async def derive_visible_watermark_profile(
+    file: UploadFile = File(...),
+    profile_id: str = Form(...),
+    source_record_id: str = Form(...),
+    brand_profile: str = Form(...),
+    x0: float = Form(...),
+    y0: float = Form(...),
+    x1: float = Form(...),
+    y1: float = Form(...),
+    max_hamming_distance: int = Form(6),
+) -> VisibleWatermarkProfile:
+    """Derive a governed visible-watermark profile without persisting raw bytes."""
+
+    try:
+        data = await file.read(settings.max_file_size_bytes + 1)
+    finally:
+        await file.close()
+    try:
+        file_type, _, _ = validate_upload(data, sanitize_filename(file.filename or "watermark"))
+        if file_type != FileType.IMAGE:
+            raise ValueError("watermark template must be a PNG or JPEG image")
+        return await run_in_threadpool(
+            build_visible_watermark_profile,
+            profile_id=profile_id,
+            source_record_id=source_record_id,
+            brand_profiles=(brand_profile,),
+            normalized_bbox=(x0, y0, x1, y1),
+            template_data=data,
+            max_hamming_distance=max_hamming_distance,
+        )
+    except (UploadValidationError, ValueError, PydanticValidationError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@router.post("/rights/consent/likeness/templates", response_model=LikenessTemplate)
+async def derive_likeness_template(
+    file: UploadFile = File(...),
+    template_id: str = Form(...),
+    consent_json: str = Form(...),
+    max_hamming_distance: int = Form(6),
+) -> LikenessTemplate:
+    """Derive a bounded enrolled-likeness template and bind its consent record."""
+
+    consent = _parse_control_json(consent_json, ConsentGrant, "consent_json")
+    try:
+        data = await file.read(settings.max_file_size_bytes + 1)
+    finally:
+        await file.close()
+    try:
+        file_type, _, _ = validate_upload(data, sanitize_filename(file.filename or "likeness"))
+        if file_type != FileType.IMAGE:
+            raise ValueError("likeness reference must be a PNG or JPEG image")
+        return await run_in_threadpool(
+            build_likeness_template,
+            template_id=template_id,
+            reference_data=data,
+            consent=consent,
+            max_hamming_distance=max_hamming_distance,
+        )
+    except (UploadValidationError, ValueError, PydanticValidationError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@router.post("/rights/consent/voice/templates", response_model=VoiceTemplate)
+async def derive_voice_template(
+    file: UploadFile = File(...),
+    template_id: str = Form(...),
+    consent_json: str = Form(...),
+    minimum_similarity: float = Form(0.94),
+) -> VoiceTemplate:
+    """Derive a bounded acoustic-reference fingerprint and bind its consent record."""
+
+    consent = _parse_control_json(consent_json, ConsentGrant, "consent_json")
+    try:
+        data = await file.read(settings.max_file_size_bytes + 1)
+    finally:
+        await file.close()
+    if not data or len(data) > settings.max_file_size_bytes:
+        raise HTTPException(status_code=413, detail="voice reference exceeds the upload limit")
+    try:
+        return await run_in_threadpool(
+            build_voice_template,
+            template_id=template_id,
+            reference_data=data,
+            consent=consent,
+            minimum_similarity=minimum_similarity,
+        )
+    except (ValueError, PydanticValidationError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
 def _execution_response(
     *,
     idempotency_key: str,
@@ -281,6 +392,8 @@ async def execute_assessment(
     rights_registry_json: str = Form(...),
     licence_registry_json: str = Form(...),
     policy_json: str = Form(...),
+    watermark_registry_json: str | None = Form(None),
+    consent_registry_json: str | None = Form(None),
     max_hamming_distance: int = Form(6),
 ) -> AssessmentExecutionResponse:
     """Run the implemented lanes under durable idempotency and fail-closed policy."""
@@ -299,6 +412,24 @@ async def execute_assessment(
         "licence_registry_json",
     )
     policy = _parse_control_json(policy_json, PublicationPolicy, "policy_json")
+    watermark_registry = (
+        _parse_control_json(
+            watermark_registry_json,
+            VisibleWatermarkRegistry,
+            "watermark_registry_json",
+        )
+        if watermark_registry_json is not None
+        else None
+    )
+    consent_registry = (
+        _parse_control_json(
+            consent_registry_json,
+            ConsentRegistry,
+            "consent_registry_json",
+        )
+        if consent_registry_json is not None
+        else None
+    )
     try:
         validate_governed_inputs(
             request=request,
@@ -323,6 +454,8 @@ async def execute_assessment(
         rights_registry=rights_registry,
         licence_registry=licence_registry,
         policy=policy,
+        watermark_registry=watermark_registry,
+        consent_registry=consent_registry,
         max_hamming_distance=max_hamming_distance,
     )
     try:
@@ -369,6 +502,8 @@ async def execute_assessment(
             rights_registry=rights_registry,
             licence_registry=licence_registry,
             policy=policy,
+            watermark_registry=watermark_registry,
+            consent_registry=consent_registry,
             created_at=datetime.now(timezone.utc),
             max_hamming_distance=max_hamming_distance,
         )

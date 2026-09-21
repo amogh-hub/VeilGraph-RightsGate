@@ -40,7 +40,21 @@ The source verifier permits only that documented omission and rejects any other 
 
 ## RightsGate release state
 
-There is no signed RightsGate release yet. Current work is an implemented, non-authorizing image prototype with challenge contracts, C2PA inspection, governed reference retrieval, licence evaluation, deterministic policy, durable orchestration and a review UI. A competition release may be called signed only after its own manifest binds the RightsGate code, dependency state, administered policy and registries, models, benchmark artifacts and evidence package.
+The public competition release is tagged `v0.5.0-rightsgate-techgium`. It includes image, bounded MP4/MOV and PCM/WAV orchestration; C2PA and independent forensic triage; governed visible-watermark, work, mark, licence and enrolled likeness/voice-consent controls; versioned policy; review UI; signed CMS decisions; dual-control release authorization; and three frozen synthetic evaluation manifests containing 192 declared cases.
+
+The downloadable competition archive is independently sanitized and contains a signed release envelope. Its manifest binds every included byte, excludes runtime databases, workspaces, dependency trees, generated archives and private-key material, and embeds the Ed25519 public key and signer fingerprint needed for offline verification. The archive is a reproducible evidence package, not a claim of real-world detector accuracy or legal clearance.
+
+Verify an archive without trusting the surrounding checkout:
+
+```bash
+PYTHONPATH=backend backend/.venv/bin/python - <<'PY'
+from pathlib import Path
+from app.security.release_package import verify_release_package_bytes
+
+package = Path("competition/releases/veilgraph-rightsgate-techgium-v0.5.0.zip")
+print(verify_release_package_bytes(package.read_bytes()))
+PY
+```
 
 ## Repository hygiene
 

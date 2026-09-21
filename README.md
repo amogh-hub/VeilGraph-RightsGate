@@ -6,7 +6,7 @@
 
 VeilGraph RightsGate is a challenge-focused product line derived from the frozen [VeilGraph](https://github.com/amogh-hub/VeilGraph) privacy-engineering system. The source repository remains unchanged. This repository targets the TECHgium challenge **“Safeguarding Content Rights in the Age of AI-Generated Media.”**
 
-**Status:** `v0.4.0 COMPETITION RELEASE` · `IMAGE + BOUNDED VIDEO/AUDIO EXECUTION IMPLEMENTED` · `C2PA + FORENSIC TRIAGE IMPLEMENTED` · `GLOBAL + LOCALIZED RIGHTS EVIDENCE IMPLEMENTED` · `POLICY + DUAL-CONTROL RELEASE IMPLEMENTED` · `SYNTHETIC METRICS/CALIBRATION/ABLATION VALIDATED`
+**Status:** `v0.5.0 COMPETITION RELEASE` · `IMAGE + BOUNDED VIDEO/AUDIO EXECUTION IMPLEMENTED` · `C2PA + FORENSIC/WATERMARK TRIAGE IMPLEMENTED` · `WORK/MARK + ENROLLED LIKENESS/VOICE EVIDENCE IMPLEMENTED` · `POLICY + DUAL-CONTROL RELEASE IMPLEMENTED` · `192-CASE SYNTHETIC EVIDENCE FROZEN`
 
 ![VeilGraph RightsGate architecture](docs/architecture/rightsgate-architecture.svg)
 
@@ -21,7 +21,7 @@ The inherited VeilGraph foundation already provides:
 - adversarial output verification;
 - cryptographically bound audit evidence and signed proof packages.
 
-Those capabilities are inherited engineering assets, not evidence that the new challenge is already solved. RightsGate now adds independent image triage, governed trademark/reference localization, bounded video-frame execution, structural PCM/WAV processing and cryptographic release control, but general visual/audio AI attribution, invisible-watermark forensics, likeness/voice comparison and representative real-world benchmark evidence remain planned work.
+Those capabilities are inherited engineering assets, not evidence that the new challenge is already solved. RightsGate now adds independent image triage, governed trademark/reference localization, bounded video-frame execution, visible-watermark profile verification, enrolled likeness/acoustic-reference consent controls and cryptographic release control. General visual/audio AI attribution, arbitrary invisible-watermark forensics and representative real-world benchmark evidence remain outside the current claim boundary.
 
 The implemented RightsGate boundary now includes strict, versioned `AssetIR`, assessment-request, evidence/claim, Asset Exposure Graph and three-dimension result schemas. Referential integrity, explicit abstention and fail-closed release invariants have automated tests.
 
@@ -33,7 +33,7 @@ The independent image forensic lane inspects bounded generator metadata and loca
 
 The trusted media executor binds uploaded bytes to `AssetIR`, the rights registry, licence registry, policy and retrieval threshold. SQLite-backed leases provide atomic idempotency, attempt fencing, exact replay, conflict rejection, crash recovery and stored-result commitment verification. It combines C2PA evidence, reference candidates, licence coverage and policy results into one Asset Exposure Graph and three-dimension assessment. Raw uploaded media is not persisted by this workflow.
 
-For MP4/MOV, every physical frame is change-screened and all evidence/novel frames within the explicit detector budget enter image forensics, retrieval and localization. Derived evidence is rebound to the original video hash with temporal or frame-region coordinates. For standalone PCM/WAV, RightsGate validates bounded stream parameters and reads the complete declared PCM payload; it explicitly abstains on origin, voice and acoustic-work rights rather than treating structure as attribution evidence.
+For MP4/MOV, every physical frame is change-screened and selected evidence/novel frames enter image forensics, retrieval and localization. Derived evidence is rebound to the original video hash with temporal or frame-region coordinates. For standalone PCM/WAV, RightsGate validates and reads the complete payload, then can compare a bounded acoustic reference against an explicit local consent registry while abstaining on origin, speaker identity and acoustic-work clearance.
 
 The licence evaluator checks explicit validity windows, status, territory, channel and intended use for every governed candidate. The policy compiler enforces audience, brand profile, channel, territory, mandatory component availability and context-scoped regulatory rules. The review UI displays the evidence and automatically requests a deterministic Ed25519-signed CMS workflow receipt. Every execution and CMS decision receipt returns `release_authorization: false`: caller-supplied registries and policies cannot grant publication authority.
 
@@ -80,7 +80,7 @@ forensics             licences
        + signed evidence pack
 ```
 
-The Asset Exposure Graph will connect works, people, voices, marks, licences, transformations, territories, campaigns and intended uses. This lets RightsGate reason about combinations that isolated detectors cannot resolve—for example, a strong logo match paired with an expired licence in a restricted territory.
+The Asset Exposure Graph connects works, people, voices, marks, licences, consents, territories, campaigns and intended uses. This lets RightsGate reason about combinations that isolated detectors cannot resolve—for example, an enrolled likeness match paired with consent that excludes the requested territory.
 
 ## Evidence-led development
 
@@ -102,6 +102,8 @@ Start with the engineering evidence:
 - [Trusted image execution](docs/RIGHTSGATE_EXECUTION.md)
 - [Architecture decision records](docs/adr)
 - [TECHgium abstract draft](competition/techgium10/ABSTRACT_DRAFT.md)
+- [Three-minute judge demo](competition/techgium10/JUDGE_DEMO.md)
+- [Submission checklist](competition/techgium10/SUBMISSION_CHECKLIST.md)
 
 ## Run the inherited foundation
 
@@ -136,9 +138,10 @@ cd backend
 source .venv/bin/activate
 PYTHONPATH=. python run_rightsgate_eval.py
 PYTHONPATH=. python run_rightsgate_signal_eval.py
+PYTHONPATH=. python run_rightsgate_consent_eval.py
 ```
 
-The declared 32-case synthetic resize set reports exact-only accuracy `0.75`, recall `0.50` and FPR `0.00`; the perceptual baseline reports accuracy `1.00`, recall `1.00` and FPR `0.00`. A second 64-case set reports `1.00` accuracy and `0.00` FPR for both governed-reference localization and self-declared generator-metadata recognition, plus Brier/ECE/MCE calibration statistics. On that set, a credentials/watermark-only all-abstain baseline has accuracy `0.50` and recall `0.00`, versus `1.00`/`1.00` for the full bounded signal pipeline. These are intentionally narrow synthetic sanity metrics, not representative real-world AI/copyright/trademark accuracy or calibration. The checked-in [evaluation manifests and summaries](competition/techgium10/evaluation) record the exact claim boundary.
+The declared 32-case synthetic resize set reports exact-only accuracy `0.75`, recall `0.50` and FPR `0.00`; its perceptual lane reports `1.00` accuracy/recall and `0.00` FPR. A 64-case set reports `1.00` accuracy and `0.00` FPR for governed-reference localization and self-declared generator metadata, with Brier/ECE/MCE calibration and a credentials/watermark-only ablation. A third 96-case set reports `1.00` accuracy/recall and `0.00` FPR separately for configured visible-watermark inversion, enrolled-image matching, enrolled-acoustic matching and consent-scope conflicts. These are deliberately narrow synthetic engineering metrics—not real-world biometric, watermark, AI, copyright or trademark claims. The checked-in [evaluation manifests and summaries](competition/techgium10/evaluation) record every byte fingerprint and limitation.
 
 ## RightsGate API and review workflow
 
@@ -184,7 +187,7 @@ scripts/                    Setup and local run helpers
 
 ## Claim boundaries
 
-RightsGate does not make legal determinations, prove human authorship from missing metadata, promise detection of every generator, or replace qualified rights reviewers. Likeness and voice matching will be limited to an explicit, consented local reference registry. The system is a defensible decision-support and release-control layer whose evidence is designed to be inspected.
+RightsGate does not make legal determinations, prove human authorship from missing metadata, promise detection of every generator, perform open-world face/speaker identification, or replace qualified rights reviewers. Likeness and voice matching is limited to explicit, consented local references. The system is a decision-support and release-control layer whose evidence is designed to be inspected.
 
 ## Licence
 

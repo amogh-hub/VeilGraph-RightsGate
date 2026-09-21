@@ -51,17 +51,17 @@
     <rect x="22" y="22" width="206" height="29" rx="14" fill="#a78bfa"/><text x="125" y="42" text-anchor="middle" class="label">MEDIA · IMPLEMENTED</text>
     <text x="22" y="88" class="cardTitle">Provenance</text>
     <text x="22" y="121" class="body">C2PA + generator metadata</text>
-    <text x="22" y="150" class="body">Residual anomaly triage</text>
+    <text x="22" y="150" class="body">Residual + watermark integrity</text>
     <text x="22" y="179" class="body">Asset / frame / timeline evidence</text>
   </g>
 
   <g transform="translate(602 416)">
     <rect width="396" height="210" rx="24" fill="#173047" stroke="#22d3ee" stroke-width="2"/>
-    <rect x="22" y="22" width="206" height="29" rx="14" fill="#67e8f9"/><text x="125" y="42" text-anchor="middle" class="label">VISUAL · IMPLEMENTED</text>
+    <rect x="22" y="22" width="226" height="29" rx="14" fill="#67e8f9"/><text x="135" y="42" text-anchor="middle" class="label">GOVERNED · IMPLEMENTED</text>
     <text x="22" y="88" class="cardTitle">Rights exposure</text>
     <text x="22" y="121" class="body">Reference retrieval + trademarks</text>
-    <text x="22" y="150" class="body">Voice / likeness abstain explicitly</text>
-    <text x="22" y="179" class="body">Licence, territory and usage links</text>
+    <text x="22" y="150" class="body">Enrolled likeness / voice consent</text>
+    <text x="22" y="179" class="body">Licence + consent scope links</text>
   </g>
 
   <g transform="translate(1082 416)">

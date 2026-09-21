@@ -1,5 +1,18 @@
 """Governed local rights-reference capabilities."""
 
+from .consent import (
+    ConsentAnalysisResult,
+    ConsentGrant,
+    ConsentRegistry,
+    LikenessTemplate,
+    VoiceTemplate,
+    analyze_likeness_consent,
+    analyze_voice_consent,
+    build_likeness_template,
+    build_voice_template,
+    voice_reference_features,
+)
+
 from .image_registry import (
     ImageFeatureManifest,
     ReferenceKind,
@@ -21,6 +34,16 @@ from .licensing import (
 from .localization import LocalizedReferenceMatchResult, localize_reference_images
 
 __all__ = [
+    "ConsentAnalysisResult",
+    "ConsentGrant",
+    "ConsentRegistry",
+    "LikenessTemplate",
+    "VoiceTemplate",
+    "analyze_likeness_consent",
+    "analyze_voice_consent",
+    "build_likeness_template",
+    "build_voice_template",
+    "voice_reference_features",
     "ImageFeatureManifest",
     "ReferenceKind",
     "RegistryImage",

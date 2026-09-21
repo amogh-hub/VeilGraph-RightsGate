@@ -45,7 +45,13 @@ from app.rightsgate.policy import (
     RegulatoryRuleEffect,
     evaluate_publication_policy,
 )
+from app.rightsgate.provenance import (
+    VisibleWatermarkRegistry,
+    build_visible_watermark_profile,
+)
 from app.rightsgate.rights import (
+    ConsentGrant,
+    ConsentRegistry,
     LicenceEvaluationResult,
     LicenceRecord,
     LicenceRegistry,
@@ -53,6 +59,7 @@ from app.rightsgate.rights import (
     ReferenceKind,
     RightsReferenceRegistry,
     build_registry_image,
+    build_likeness_template,
     evaluate_candidate_licences,
     match_reference_image,
 )
@@ -338,6 +345,76 @@ def test_end_to_end_reviews_when_required_detector_evidence_is_incomplete() -> N
     assert assessment.deployment.claims[0].outcome.value == "UNKNOWN"
 
 
+def test_executor_binds_watermark_and_likeness_registries_and_blocks_consent_conflict() -> None:
+    data = gradient_png(width=128, height=128)
+    request = assessment_request(data)
+    watermark_profile = build_visible_watermark_profile(
+        profile_id="watermark.full-frame-001",
+        source_record_id="brand-record.full-frame-001",
+        brand_profiles=("*",),
+        normalized_bbox=(0.0, 0.0, 1.0, 1.0),
+        template_data=data,
+    )
+    watermark_registry = VisibleWatermarkRegistry(
+        registry_id="registry.watermarks",
+        version="1",
+        profiles=(watermark_profile,),
+    )
+    grant = ConsentGrant(
+        consent_id="consent.subject-001",
+        source_record_id="consent-record.subject-001",
+        subject_id="person.subject-001",
+        valid_from=NOW - timedelta(days=1),
+        valid_until=NOW + timedelta(days=1),
+        territories=("US",),
+        channels=("web",),
+        intended_uses=("public advertising campaign",),
+    )
+    consent_registry = ConsentRegistry(
+        registry_id="registry.consents",
+        version="1",
+        likeness_templates=(
+            build_likeness_template(
+                template_id="likeness.subject-001",
+                reference_data=data,
+                consent=grant,
+            ),
+        ),
+    )
+    policy = publication_policy().model_copy(
+        update={
+            "required_component_ids": tuple(
+                sorted(
+                    publication_policy().required_component_ids
+                    + (
+                        "provenance.watermark-forensics",
+                        "rights.likeness-consent",
+                    )
+                )
+            )
+        }
+    )
+    assessment = execute_rightsgate_assessment(
+        data,
+        request=request,
+        rights_registry=rights_registry(data),
+        licence_registry=licence_registry(),
+        policy=policy,
+        watermark_registry=watermark_registry,
+        consent_registry=consent_registry,
+        created_at=NOW,
+    )
+
+    components = {item.component_id: item for item in assessment.components}
+    assert components["provenance.watermark-forensics"].state == ComponentState.AVAILABLE
+    assert components["rights.likeness-consent"].state == ComponentState.AVAILABLE
+    assert assessment.provenance.verdict != ProvenanceVerdict.TAMPERED
+    assert assessment.rights.verdict == RightsVerdict.POLICY_CONFLICT
+    assert assessment.deployment.decision == DeploymentDecision.BLOCK
+    assert any(node.kind.value == "PERSON" for node in assessment.exposure_graph.nodes)
+    assert any(node.kind.value == "CONSENT" for node in assessment.exposure_graph.nodes)
+
+
 def test_video_executor_change_screens_timeline_and_binds_frame_evidence() -> None:
     video_path = Path(__file__).resolve().parents[1] / "test_video_privacy_demo.mp4"
     data = video_path.read_bytes()
@@ -501,7 +578,26 @@ def test_execution_fingerprint_binds_threshold_and_all_governed_inputs() -> None
     }
     first = execution_fingerprint(request, **inputs, max_hamming_distance=4)
     second = execution_fingerprint(request, **inputs, max_hamming_distance=5)
-    assert first != second
+    with_watermark = execution_fingerprint(
+        request,
+        **inputs,
+        max_hamming_distance=4,
+        watermark_registry=VisibleWatermarkRegistry(
+            registry_id="registry.watermarks-empty",
+            version="1",
+        ),
+    )
+    with_consent = execution_fingerprint(
+        request,
+        **inputs,
+        max_hamming_distance=4,
+        consent_registry=ConsentRegistry(
+            registry_id="registry.consents-empty",
+            version="1",
+        ),
+    )
+
+    assert len({first, second, with_watermark, with_consent}) == 4
 
 
 def test_policy_can_go_only_with_complete_clear_inputs_and_available_components() -> None:

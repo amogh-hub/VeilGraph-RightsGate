@@ -2,15 +2,17 @@
 
 ## Purpose
 
-`POST /api/v1/rightsgate/assessments` accepts one PNG/JPEG, bounded MP4/MOV or bounded PCM/WAV deployment asset plus four strict JSON control documents as multipart fields:
+`POST /api/v1/rightsgate/assessments` accepts one PNG/JPEG, bounded MP4/MOV or bounded PCM/WAV deployment asset plus strict JSON control documents as multipart fields:
 
 - `request_json` — versioned `AssetIR`, deployment context and idempotency key;
 - `rights_registry_json` — content-addressed image references;
 - `licence_registry_json` — governed licence records;
 - `policy_json` — deterministic publication policy;
+- `watermark_registry_json` — optional governed visible-watermark profiles;
+- `consent_registry_json` — optional governed likeness and acoustic-reference consent templates;
 - `max_hamming_distance` — bounded perceptual retrieval threshold.
 
-Use `POST /api/v1/rightsgate/rights/references/image` to derive a reference record from real reference bytes. The browser workflow performs this step automatically.
+Use the reference-derivation endpoints for governed work/mark records, visible-watermark profiles, likeness templates and PCM/WAV acoustic templates. Raw reference bytes are not persisted by these adapters.
 
 ## Execution order
 
@@ -22,7 +24,8 @@ validate control schemas and cross-registry references
   -> verify embedded C2PA credentials offline
   -> image: inspect bounded generator metadata and localized residual consistency
   -> video: change-screen every physical frame and deeply analyze selected/novel frames
-  -> audio: decode and length-check the complete bounded PCM/WAV stream, then abstain on unavailable origin/voice lanes
+  -> image: verify applicable governed visible-watermark regions and enrolled likeness consent
+  -> audio: decode the complete bounded PCM/WAV stream and compare optional enrolled acoustic references
   -> retrieve exact/perceptual governed visual candidates
   -> localize governed visual references with ORB/RANSAC geometry and image/video-frame coordinates
   -> evaluate licence status/date/territory/channel/intended use
@@ -56,7 +59,7 @@ The executor version and component versions are included in the execution finger
 
 - **Image:** full current provenance, global/localized visual retrieval and licence lanes.
 - **Video:** MP4/MOV limits are enforced, every physical frame is change-screened, and evidence plus materially novel frames enter the image lanes within a configured deep-analysis budget. Budget truncation degrades the timeline component. Embedded audio-track voice/acoustic rights are not assessed.
-- **Audio:** RIFF/WAVE PCM structure, parameters, declared duration and full payload length are verified. C2PA is attempted on the original bytes, while origin, voice identity/consent and acoustic-work matching remain explicit abstentions.
+- **Audio:** RIFF/WAVE PCM structure, parameters, declared duration and full payload length are verified. Optional enrolled acoustic references are matched against governed consent scopes; origin, speaker identity and acoustic-work clearance remain explicit abstentions.
 
 ## Release boundary
 

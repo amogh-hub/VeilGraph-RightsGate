@@ -147,12 +147,37 @@ export interface components {
       "rights_holder": string
       "source_record_id": string
     }
+    "Body_derive_likeness_template_api_v1_rightsgate_rights_consent_likeness_templates_post": {
+      "file": string
+      "template_id": string
+      "consent_json": string
+      "max_hamming_distance"?: number
+    }
+    "Body_derive_visible_watermark_profile_api_v1_rightsgate_provenance_watermarks_visible_profiles_post": {
+      "file": string
+      "profile_id": string
+      "source_record_id": string
+      "brand_profile": string
+      "x0": number
+      "y0": number
+      "x1": number
+      "y1": number
+      "max_hamming_distance"?: number
+    }
+    "Body_derive_voice_template_api_v1_rightsgate_rights_consent_voice_templates_post": {
+      "file": string
+      "template_id": string
+      "consent_json": string
+      "minimum_similarity"?: number
+    }
     "Body_execute_assessment_api_v1_rightsgate_assessments_post": {
       "file": string
       "request_json": string
       "rights_registry_json": string
       "licence_registry_json": string
       "policy_json": string
+      "watermark_registry_json"?: string | null
+      "consent_registry_json"?: string | null
       "max_hamming_distance"?: number
     }
     "Body_inspect_c2pa_api_v1_rightsgate_provenance_c2pa_post": {
@@ -274,6 +299,16 @@ export interface components {
       "reason"?: string | null
     }
     "ComponentState": "AVAILABLE" | "DEGRADED" | "UNAVAILABLE"
+    "ConsentGrant": {
+      "consent_id": string
+      "source_record_id": string
+      "subject_id": string
+      "valid_from": string
+      "valid_until": string
+      "territories": Array<string>
+      "channels": Array<string>
+      "intended_uses": Array<string>
+    }
     "ContractBundleResponse": {
       "bundle_schema"?: string
       "contract_status"?: string
@@ -479,6 +514,13 @@ export interface components {
       "updated_at": string
     }
     "JobStatus": "CREATED" | "UPLOADED" | "ANALYSED" | "HUMAN_REVIEW_REQUIRED" | "TRANSFORMED" | "VERIFIED" | "BLOCKED" | "DESTROYED" | "FAILED"
+    "LikenessTemplate": {
+      "template_id": string
+      "reference_sha256": string
+      "dhash": string
+      "consent": components['schemas']['ConsentGrant']
+      "max_hamming_distance"?: number
+    }
     "LocatorKind": "WHOLE_ASSET" | "REGION" | "TIME_RANGE" | "TEXT_RANGE" | "METADATA_PATH"
     "MediaKind": "IMAGE" | "VIDEO" | "AUDIO" | "DOCUMENT"
     "OfflineStatusResponse": {
@@ -756,6 +798,25 @@ export interface components {
       "security_scanned"?: boolean
       "full_ocr_selected"?: boolean
       "security_promoted"?: boolean
+    }
+    "VisibleWatermarkProfile": {
+      "profile_id": string
+      "source_record_id": string
+      "brand_profiles": Array<string>
+      "normalized_bbox": Array<unknown>
+      "template_width": number
+      "template_height": number
+      "pixel_sha256": string
+      "dhash": string
+      "max_hamming_distance"?: number
+    }
+    "VoiceTemplate": {
+      "template_id": string
+      "reference_sha256": string
+      "feature_version"?: string
+      "features": Array<number>
+      "consent": components['schemas']['ConsentGrant']
+      "minimum_similarity"?: number
     }
     "app__core__enums__GraphNodeKind": "DOCUMENT" | "SUBJECT" | "RELATED_PERSON" | "DIRECT_IDENTIFIER" | "QUASI_IDENTIFIER" | "VISUAL_IDENTIFIER"
     "app__rightsgate__contracts__GraphNodeKind": "ASSET" | "WORK" | "MARK" | "PERSON" | "VOICE" | "LICENCE" | "CONSENT" | "TRANSFORMATION" | "TERRITORY" | "CAMPAIGN"

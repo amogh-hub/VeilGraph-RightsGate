@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import io
 import hashlib
+import json
+import math
+import struct
+import wave
 
 from fastapi.testclient import TestClient
 from PIL import Image
@@ -69,7 +73,9 @@ def test_contract_bundle_declares_implemented_contracts_without_detector_claims(
         "veilgraph.rightsgate.assessment.v1",
         "veilgraph.rightsgate.rights-reference-registry.v1",
         "veilgraph.rightsgate.licence-registry.v1",
-        "veilgraph.rightsgate.publication-policy.v1",
+            "veilgraph.rightsgate.publication-policy.v1",
+            "veilgraph.rightsgate.visible-watermark-registry.v1",
+            "veilgraph.rightsgate.consent-registry.v1",
         "veilgraph.rightsgate.cms-decision-request.v1",
         "veilgraph.rightsgate.cms-decision-receipt.v1",
         "veilgraph.rightsgate.reviewer-trust-registry.v1",
@@ -107,6 +113,12 @@ def test_openapi_exposes_rightsgate_contract_boundary(client: TestClient) -> Non
     assert "/api/v1/rightsgate/assessments/validate" in document["paths"]
     assert "/api/v1/rightsgate/provenance/c2pa" in document["paths"]
     assert "/api/v1/rightsgate/rights/references/image" in document["paths"]
+    assert (
+        "/api/v1/rightsgate/provenance/watermarks/visible/profiles"
+        in document["paths"]
+    )
+    assert "/api/v1/rightsgate/rights/consent/likeness/templates" in document["paths"]
+    assert "/api/v1/rightsgate/rights/consent/voice/templates" in document["paths"]
     assert "/api/v1/rightsgate/assessments" in document["paths"]
     assert "/api/v1/rightsgate/assessments/{idempotency_key}" in document["paths"]
     assert "/api/v1/rightsgate/integrations/cms/release-authorizations" in document["paths"]
@@ -159,3 +171,81 @@ def test_image_reference_endpoint_derives_byte_bound_record(client: TestClient) 
     assert response.status_code == 200, response.text
     assert response.json()["sha256"] == hashlib.sha256(data).hexdigest()
     assert len(response.json()["dhash"]) == 16
+
+
+def consent_payload() -> dict:
+    return {
+        "consent_id": "consent.demo-001",
+        "source_record_id": "consent-record.demo-001",
+        "subject_id": "person.demo-001",
+        "valid_from": "2026-09-20T00:00:00Z",
+        "valid_until": "2027-09-20T00:00:00Z",
+        "territories": ["IN"],
+        "channels": ["web"],
+        "intended_uses": ["public campaign"],
+    }
+
+
+def test_watermark_and_consent_template_endpoints_derive_governed_records(
+    client: TestClient,
+) -> None:
+    image_buffer = io.BytesIO()
+    Image.new("RGB", (32, 32), color=(10, 90, 180)).save(image_buffer, format="PNG")
+    image_data = image_buffer.getvalue()
+    watermark = client.post(
+        "/api/v1/rightsgate/provenance/watermarks/visible/profiles",
+        data={
+            "profile_id": "watermark.demo-001",
+            "source_record_id": "brand-record.demo-001",
+            "brand_profile": "acme",
+            "x0": 0.75,
+            "y0": 0.75,
+            "x1": 1,
+            "y1": 1,
+            "max_hamming_distance": 6,
+        },
+        files={"file": ("watermark.png", image_data, "image/png")},
+    )
+    assert watermark.status_code == 200, watermark.text
+    assert watermark.json()["profile_id"] == "watermark.demo-001"
+    assert len(watermark.json()["pixel_sha256"]) == 64
+
+    likeness = client.post(
+        "/api/v1/rightsgate/rights/consent/likeness/templates",
+        data={
+            "template_id": "likeness.demo-001",
+            "consent_json": json.dumps(consent_payload()),
+            "max_hamming_distance": 6,
+        },
+        files={"file": ("likeness.png", image_data, "image/png")},
+    )
+    assert likeness.status_code == 200, likeness.text
+    assert likeness.json()["consent"]["subject_id"] == "person.demo-001"
+
+    sample_rate = 16_000
+    audio_buffer = io.BytesIO()
+    with wave.open(audio_buffer, "wb") as stream:
+        stream.setnchannels(1)
+        stream.setsampwidth(2)
+        stream.setframerate(sample_rate)
+        stream.writeframes(
+            b"".join(
+                struct.pack(
+                    "<h",
+                    int(12_000 * math.sin(2 * math.pi * 440 * index / sample_rate)),
+                )
+                for index in range(sample_rate // 5)
+            )
+        )
+    voice = client.post(
+        "/api/v1/rightsgate/rights/consent/voice/templates",
+        data={
+            "template_id": "voice.demo-001",
+            "consent_json": json.dumps(consent_payload()),
+            "minimum_similarity": 0.94,
+        },
+        files={"file": ("voice.wav", audio_buffer.getvalue(), "audio/wav")},
+    )
+    assert voice.status_code == 200, voice.text
+    assert voice.json()["feature_version"] == "log-spectrum-voice-reference.v1"
+    assert len(voice.json()["features"]) == 48

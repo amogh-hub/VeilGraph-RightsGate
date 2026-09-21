@@ -46,15 +46,25 @@ from .policy import (
     PublicationPolicy,
     evaluate_publication_policy,
 )
-from .provenance import inspect_image_forensics, verify_c2pa
+from .provenance import (
+    VisibleWatermarkRegistry,
+    inspect_image_forensics,
+    verify_c2pa,
+    verify_visible_watermarks,
+)
 from .provenance.image_forensics import COMPONENT_VERSION as FORENSICS_COMPONENT_VERSION
+from .provenance.watermark import COMPONENT_VERSION as WATERMARK_COMPONENT_VERSION
 from .rights import (
+    ConsentAnalysisResult,
+    ConsentRegistry,
     LicenceEvaluationResult,
     LicenceRegistry,
     LocalizedReferenceMatchResult,
     ReferenceKind,
     RightsImageMatchResult,
     RightsReferenceRegistry,
+    analyze_likeness_consent,
+    analyze_voice_consent,
     evaluate_candidate_licences,
     localize_reference_images,
     match_reference_image,
@@ -62,6 +72,7 @@ from .rights import (
 from .rights.image_registry import COMPONENT_VERSION as IMAGE_REGISTRY_COMPONENT_VERSION
 from .rights.licensing import COMPONENT_VERSION as LICENCE_COMPONENT_VERSION
 from .rights.localization import COMPONENT_VERSION as LOCALIZER_COMPONENT_VERSION
+from .rights.consent import COMPONENT_VERSION as CONSENT_COMPONENT_VERSION
 from .video_analysis import (
     COMPONENT_VERSION as VIDEO_ANALYZER_COMPONENT_VERSION,
     analyze_video_visuals,
@@ -69,19 +80,19 @@ from .video_analysis import (
 
 KNOWN_UNIMPLEMENTED_COMPONENTS: dict[str, tuple[str, str]] = {
     "provenance.watermark-forensics": (
-        "provenance.watermark-detector",
-        "General invisible-watermark and metadata-tampering detection is not implemented.",
+        "provenance.governed-visible-watermark-verifier",
+        "No governed visible-watermark registry was supplied; arbitrary invisible watermark detection remains unsupported.",
     ),
     "rights.likeness-consent": (
         "rights.consented-likeness-detector",
-        "Consented likeness comparison is not implemented.",
+        "No governed consent registry was supplied for bounded enrolled-likeness matching.",
     ),
     "rights.voice-consent": (
         "rights.consented-voice-detector",
-        "Consented voice comparison is not implemented.",
+        "No governed consent registry was supplied for bounded enrolled-voice matching.",
     ),
 }
-EXECUTOR_VERSION = "1.2.0"
+EXECUTOR_VERSION = "1.3.0"
 EXECUTOR_COMPONENT_ID = "orchestration.executor"
 
 
@@ -100,6 +111,8 @@ def execution_fingerprint(
     rights_registry: RightsReferenceRegistry,
     licence_registry: LicenceRegistry,
     policy: PublicationPolicy,
+    watermark_registry: VisibleWatermarkRegistry | None = None,
+    consent_registry: ConsentRegistry | None = None,
     max_hamming_distance: int = 6,
 ) -> str:
     """Bind idempotency to every governed input, not only caller metadata."""
@@ -111,9 +124,11 @@ def execution_fingerprint(
             "component_versions": {
                 "provenance.c2pa": c2pa.__version__,
                 "provenance.independent-forensics": FORENSICS_COMPONENT_VERSION,
+                "provenance.watermark-forensics": WATERMARK_COMPONENT_VERSION,
                 "rights.local-image-registry": IMAGE_REGISTRY_COMPONENT_VERSION,
                 "rights.licence-evaluator": LICENCE_COMPONENT_VERSION,
                 "rights.trademark-localizer": LOCALIZER_COMPONENT_VERSION,
+                "rights.consent-reference-matcher": CONSENT_COMPONENT_VERSION,
                 "ingestion.video-timeline-analyzer": VIDEO_ANALYZER_COMPONENT_VERSION,
                 "ingestion.pcm-wav-parser": AUDIO_ANALYZER_COMPONENT_VERSION,
                 "deployment.policy-compiler": POLICY_COMPONENT_VERSION,
@@ -123,9 +138,17 @@ def execution_fingerprint(
                 "sample_fps": settings.video_evidence_sample_fps,
             },
             "max_hamming_distance": max_hamming_distance,
+            "consent_registry_sha256": (
+                consent_registry.commitment_sha256() if consent_registry is not None else None
+            ),
             "policy_sha256": policy.commitment_sha256(),
             "request_sha256": request.request_sha256(),
             "rights_registry_sha256": rights_registry.commitment_sha256(),
+            "watermark_registry_sha256": (
+                watermark_registry.commitment_sha256()
+                if watermark_registry is not None
+                else None
+            ),
         }
     )
 
@@ -290,17 +313,16 @@ def _combine_rights(
     )
 
 
-def _combine_provenance(
-    c2pa_assessment: ProvenanceAssessment,
-    forensic_assessment: ProvenanceAssessment,
-) -> ProvenanceAssessment:
+def _combine_provenance(*assessments: ProvenanceAssessment) -> ProvenanceAssessment:
     """Preserve both lanes while applying explicit, deterministic precedence."""
 
-    claims = c2pa_assessment.claims + forensic_assessment.claims
+    if not assessments:
+        raise ValueError("at least one provenance assessment is required")
+    claims = tuple(claim for item in assessments for claim in item.claims)
     limitations = tuple(
-        sorted(set(c2pa_assessment.limitations + forensic_assessment.limitations))
+        sorted({limitation for item in assessments for limitation in item.limitations})
     )
-    states = {c2pa_assessment.state, forensic_assessment.state}
+    states = {item.state for item in assessments}
     if states == {AssessmentState.UNAVAILABLE}:
         state = AssessmentState.UNAVAILABLE
     elif AssessmentState.UNAVAILABLE in states or AssessmentState.PARTIAL in states:
@@ -308,7 +330,7 @@ def _combine_provenance(
     else:
         state = AssessmentState.COMPLETE
 
-    candidates = (c2pa_assessment, forensic_assessment)
+    candidates = assessments
     if any(item.verdict == ProvenanceVerdict.TAMPERED for item in candidates):
         verdict = ProvenanceVerdict.TAMPERED
         confidence = max(
@@ -338,6 +360,46 @@ def _combine_provenance(
         claims=claims,
         limitations=limitations if verdict == ProvenanceVerdict.UNKNOWN else (),
     )
+
+
+def _combine_consent_rights(
+    base: RightsAssessment,
+    results: tuple[ConsentAnalysisResult, ...],
+) -> RightsAssessment:
+    if not results:
+        return base
+    claims = base.claims + tuple(claim for result in results for claim in result.claims)
+    limitations = tuple(
+        sorted(
+            set(
+                base.limitations
+                + tuple(
+                    limitation
+                    for result in results
+                    for limitation in result.limitations
+                )
+            )
+        )
+    )
+    conflicts = tuple(result for result in results if result.policy_conflict)
+    candidates = tuple(result for result in results if result.candidate_subject_ids)
+    if conflicts:
+        return RightsAssessment(
+            state=AssessmentState.COMPLETE,
+            verdict=RightsVerdict.POLICY_CONFLICT,
+            confidence=max(result.confidence for result in conflicts),
+            claims=claims,
+            limitations=limitations,
+        )
+    if candidates and base.verdict != RightsVerdict.POLICY_CONFLICT:
+        return RightsAssessment(
+            state=AssessmentState.PARTIAL,
+            verdict=RightsVerdict.POTENTIAL_EXPOSURE,
+            confidence=max(base.confidence, *(result.confidence for result in candidates)),
+            claims=claims,
+            limitations=limitations,
+        )
+    return base.model_copy(update={"claims": claims, "limitations": limitations})
 
 
 def _declared_unavailable_component(component_id: str) -> ComponentRecord:
@@ -435,6 +497,54 @@ def _build_graph(
                 evidence_ids=(item.evidence_id,),
             )
 
+    for item in evidence:
+        if item.kind != EvidenceKind.CONSENT_RECORD:
+            continue
+        subject_id = item.attributes.get("subject_id")
+        consent_id = item.attributes.get("consent_id")
+        covered = item.attributes.get("covered")
+        if not isinstance(subject_id, str) or not isinstance(consent_id, str):
+            continue
+        is_voice = item.component_id == "rights.voice-consent"
+        subject_node_id = _graph_id("node.subject", f"{item.component_id}:{subject_id}")
+        consent_node_id = _graph_id("node.consent", consent_id)
+        nodes[subject_node_id] = ExposureGraphNode(
+            node_id=subject_node_id,
+            kind=GraphNodeKind.VOICE if is_voice else GraphNodeKind.PERSON,
+            label=subject_id,
+            evidence_ids=(item.evidence_id,),
+        )
+        nodes[consent_node_id] = ExposureGraphNode(
+            node_id=consent_node_id,
+            kind=GraphNodeKind.CONSENT,
+            label=consent_id,
+            evidence_ids=(item.evidence_id,),
+            attributes={"covered": bool(covered)},
+        )
+        subject_edge_id = _graph_id(
+            "edge.subject-match", f"{descriptor.sha256}:{item.component_id}:{subject_id}"
+        )
+        edges[subject_edge_id] = ExposureGraphEdge(
+            edge_id=subject_edge_id,
+            kind=GraphEdgeKind.CONTAINS_VOICE if is_voice else GraphEdgeKind.DEPICTS,
+            source_node_id=root_id,
+            target_node_id=subject_node_id,
+            confidence=item.confidence,
+            evidence_ids=(item.evidence_id,),
+        )
+        consent_edge_id = _graph_id(
+            "edge.consented-by", f"{subject_id}:{consent_id}:{descriptor.sha256}"
+        )
+        edges[consent_edge_id] = ExposureGraphEdge(
+            edge_id=consent_edge_id,
+            kind=GraphEdgeKind.CONSENTED_BY,
+            source_node_id=subject_node_id,
+            target_node_id=consent_node_id,
+            confidence=item.confidence,
+            evidence_ids=(item.evidence_id,),
+            attributes={"covered": bool(covered)},
+        )
+
     policy_evidence = tuple(item for item in evidence if item.kind == EvidenceKind.POLICY_RULE)
     if policy_evidence:
         campaign_id = _graph_id("node.campaign", request.context.intended_use)
@@ -491,6 +601,8 @@ def execute_rightsgate_assessment(
     rights_registry: RightsReferenceRegistry,
     licence_registry: LicenceRegistry,
     policy: PublicationPolicy,
+    watermark_registry: VisibleWatermarkRegistry | None = None,
+    consent_registry: ConsentRegistry | None = None,
     created_at: datetime,
     max_hamming_distance: int = 6,
 ) -> RightsGateAssessment:
@@ -511,6 +623,8 @@ def execute_rightsgate_assessment(
         rights_registry=rights_registry,
         licence_registry=licence_registry,
         policy=policy,
+        watermark_registry=watermark_registry,
+        consent_registry=consent_registry,
         max_hamming_distance=max_hamming_distance,
     )
 
@@ -520,9 +634,20 @@ def execute_rightsgate_assessment(
             data,
             asset_sha256=descriptor.sha256,
         )
+        watermark_result = (
+            verify_visible_watermarks(
+                data,
+                asset_sha256=descriptor.sha256,
+                context=request.context,
+                registry=watermark_registry,
+            )
+            if watermark_registry is not None
+            else None
+        )
         provenance = _combine_provenance(
             c2pa_result.assessment,
             forensic_result.assessment,
+            *((watermark_result.assessment,) if watermark_result is not None else ()),
         )
         image_result = match_reference_image(
             data,
@@ -535,16 +660,32 @@ def execute_rightsgate_assessment(
             asset_sha256=descriptor.sha256,
             registry=rights_registry,
         )
+        likeness_result = (
+            analyze_likeness_consent(
+                data,
+                asset_sha256=descriptor.sha256,
+                context=request.context,
+                registry=consent_registry,
+                assessed_at=created_at,
+            )
+            if consent_registry is not None
+            else None
+        )
         lane_components = (
             forensic_result.component,
             image_result.component,
             localization_result.component,
+            *((watermark_result.component,) if watermark_result is not None else ()),
+            *((likeness_result.component,) if likeness_result is not None else ()),
         )
         lane_evidence = (
             forensic_result.evidence
             + image_result.evidence
             + localization_result.evidence
+            + (watermark_result.evidence if watermark_result is not None else ())
+            + (likeness_result.evidence if likeness_result is not None else ())
         )
+        consent_results = (likeness_result,) if likeness_result is not None else ()
     elif descriptor.media_kind == MediaKind.VIDEO:
         video_result = analyze_video_visuals(
             data,
@@ -567,6 +708,7 @@ def execute_rightsgate_assessment(
         lane_evidence = video_result.evidence
         licence_additional_evidence = localization_result.evidence
         direct_audio_rights = None
+        consent_results = ()
     else:
         audio_result = inspect_pcm_wav(data, asset_sha256=descriptor.sha256)
         provenance = _combine_provenance(c2pa_result.assessment, audio_result.provenance)
@@ -575,13 +717,31 @@ def execute_rightsgate_assessment(
             evidence=(),
             assessment=audio_result.rights,
         )
+        voice_result = (
+            analyze_voice_consent(
+                data,
+                asset_sha256=descriptor.sha256,
+                context=request.context,
+                registry=consent_registry,
+                assessed_at=created_at,
+            )
+            if consent_registry is not None
+            else None
+        )
         lane_components = (
             audio_result.component,
-            _declared_unavailable_component("rights.voice-consent"),
+            *(
+                (voice_result.component,)
+                if voice_result is not None
+                else (_declared_unavailable_component("rights.voice-consent"),)
+            ),
         )
-        lane_evidence = audio_result.evidence
+        lane_evidence = audio_result.evidence + (
+            voice_result.evidence if voice_result is not None else ()
+        )
         licence_additional_evidence = ()
         direct_audio_rights = audio_result.rights
+        consent_results = (voice_result,) if voice_result is not None else ()
     if descriptor.media_kind == MediaKind.IMAGE:
         licence_additional_evidence = localization_result.evidence
         direct_audio_rights = None
@@ -604,6 +764,7 @@ def execute_rightsgate_assessment(
                 ),
             }
         )
+    rights = _combine_consent_rights(rights, consent_results)
 
     components = [
         ComponentRecord(

@@ -20,7 +20,7 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=ROOT / "competition/releases/veilgraph-rightsgate-techgium-v0.4.0.zip",
+        default=ROOT / "competition/releases/veilgraph-rightsgate-techgium-v0.5.0.zip",
     )
     parser.add_argument("--report", type=Path)
     arguments = parser.parse_args()

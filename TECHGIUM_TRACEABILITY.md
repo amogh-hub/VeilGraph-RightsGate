@@ -24,17 +24,17 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | API-03 | Derive governed image-reference records | IMPLEMENTED | Server-side hash/dHash derivation, upload validation and HTTP tests |
 | ING-01 | Process images | IMPLEMENTED | Exact hash/size/type/dimension binding and parser-safety tests in trusted execution |
 | ING-02 | Process video | IMPLEMENTED | MP4/MOV byte/dimension/duration binding, every-physical-frame change screen, bounded selected-frame deep analysis, temporal/region evidence rebinding and automated execution test; audio-track rights analysis remains unavailable |
-| ING-03 | Process standalone audio | IMPLEMENTED | Bounded PCM/WAV header and complete-payload decoding, byte/duration binding, malformed/truncated rejection and explicit voice-rights abstention tests |
+| ING-03 | Process standalone audio | IMPLEMENTED | Bounded PCM/WAV header and complete-payload decoding, byte/duration binding, malformed/truncated rejection and governed acoustic-reference consent matching |
 | PROV-01 | Verify content credentials/C2PA | IMPLEMENTED | Official offline SDK adapter and no-manifest/status-mapping tests; signed, mismatched, stripped and replayed fixtures remain for `VALIDATED` |
 | PROV-02 | Assess wholly AI-generated media | IMPLEMENTED | C2PA and bounded self-declared generator-metadata evidence with synthetic sanity metrics; open-world visual attribution still requires a frozen multi-generator split |
 | PROV-03 | Assess partial generation or manipulation | IMPLEMENTED | Partial-edit declarations and localized non-attributive residual evidence are tested; representative splice/inpaint localization remains for `VALIDATED` |
-| PROV-04 | Detect provenance metadata or watermark tampering | PLANNED | Removal, forgery, collision and transformation attack matrix |
+| PROV-04 | Detect provenance metadata or watermark tampering | VALIDATED | C2PA mismatch handling plus governed visible-watermark region verification; frozen 32-case inversion sanity lane reports accuracy `1.00`/FPR `0.00`; arbitrary invisible families remain out of scope |
 | RIGHTS-01 | Identify copyrighted-work exposure | IMPLEMENTED | Versioned byte-bound registry and exact/perceptual image candidate tests; transformed-match frozen benchmark remains for `VALIDATED` |
 | RIGHTS-02 | Identify trademark/logo exposure | IMPLEMENTED | Governed ORB/RANSAC region localization with byte-bound evidence and a frozen synthetic sanity set; open-world and obscured-mark benchmarks remain |
 | RIGHTS-03 | Evaluate licence constraints | IMPLEMENTED | Status, intended-use, channel, territory, validity-window, conflict and registry-integrity tests |
-| RIGHTS-04 | Identify likeness exposure | PLANNED | Consented local gallery with threshold/FAR evidence |
-| RIGHTS-05 | Identify voice exposure | PLANNED | Consented local voice set with transformation and FAR evidence |
-| GRAPH-01 | Combine related evidence | IMPLEMENTED | Asset, work/mark, licence, campaign and territory nodes with evidence-bound edge tests |
+| RIGHTS-04 | Identify likeness exposure | VALIDATED | Governed enrolled-image registry, scoped consent evaluation, block-on-conflict orchestration and frozen 32-case synthetic reference lane; not face recognition |
+| RIGHTS-05 | Identify voice exposure | VALIDATED | Bounded PCM/WAV acoustic fingerprint, scoped consent evaluation and frozen 32-case gain/phase/frequency sanity lane; not speaker identification |
+| GRAPH-01 | Combine related evidence | IMPLEMENTED | Asset, work/mark, person/voice, licence, consent, campaign and territory nodes with evidence-bound edge tests |
 | POLICY-01 | Configurable brand/channel/audience policy | IMPLEMENTED | Versioned schema and deterministic mismatch fixtures |
 | POLICY-02 | Regional territory policy | IMPLEMENTED | Territory allow-list and policy-version identity tests |
 | POLICY-03 | Clear `GO`/`REVIEW`/`BLOCK` outcome | IMPLEMENTED | Exact deterministic mapping, missing-component abstention and contract fail-closed tests |
@@ -43,11 +43,11 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | CONF-01 | Confidence per dimension | VALIDATED | Frozen synthetic Brier score, fixed-bin ECE/MCE and score-boundary tests exist for localization and generator-metadata lanes; representative calibration remains |
 | FLOW-00 | Integrated RightsGate review UI | IMPLEMENTED | Image/reference intake and three-dimension evidence/decision workflow |
 | FLOW-01 | Integrate with an existing CMS workflow | IMPLEMENTED | UI-consumed CMS decision schemas, immutable-assessment binding, Ed25519 receipt verification, and a separate short-lived dual-control release boundary with pinned reviewer roles/keys; vendor webhook delivery remains |
-| EVAL-00 | Reproducible component sanity evaluation | VALIDATED | Frozen 32-case retrieval and 64-case challenge-signal manifests, byte hashes, exact-only ablation and checked-in bounded results |
-| EVAL-01 | Declare test set | IMPLEMENTED | Versioned frozen synthetic manifests and byte fingerprints exist; representative legally sourced family splits remain |
-| EVAL-02 | State accuracy and false-positive rate | VALIDATED | Bounded synthetic accuracy/FPR for perceptual retrieval, localization and metadata markers; no challenge-wide or real-world metric claim |
+| EVAL-00 | Reproducible component sanity evaluation | VALIDATED | Frozen 32-case retrieval, 64-case challenge-signal and 96-case watermark/consent manifests, byte hashes, ablations and checked-in bounded results |
+| EVAL-01 | Declare test set | IMPLEMENTED | Three versioned frozen synthetic manifests with 192 byte-fingerprinted cases exist; representative legally sourced family splits remain |
+| EVAL-02 | State accuracy and false-positive rate | VALIDATED | Bounded synthetic accuracy/FPR for retrieval, localization, metadata markers, visible-watermark integrity, enrolled likeness/voice and consent scope; no challenge-wide or real-world metric claim |
 | EVAL-03 | Go beyond standards/watermarking | VALIDATED | Frozen 64-case synthetic all-abstain credentials/watermark-only baseline versus full signal pipeline; representative credential/watermark attack ablation remains |
-| SEC-01 | Protect assets, references and audit evidence | RELEASED | Version `v0.4.0-rightsgate-techgium`: updated threat model, secret/runtime exclusions, signed sanitized release envelope, pinned signer verification, release-tampering tests and public release artifact |
+| SEC-01 | Protect assets, references and audit evidence | RELEASED | Version `v0.5.0-rightsgate-techgium`: updated threat model, secret/runtime exclusions, signed sanitized release envelope, pinned signer verification, release-tampering tests and public release artifact |
 
 ## Release rule
 

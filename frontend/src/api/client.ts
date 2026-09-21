@@ -138,6 +138,8 @@ export const api = {
       rightsRegistry: Record<string, unknown>
       licenceRegistry: Record<string, unknown>
       publicationPolicy: Record<string, unknown>
+      watermarkRegistry?: Record<string, unknown>
+      consentRegistry?: Record<string, unknown>
       maxHammingDistance?: number
     },
   ) => {
@@ -147,6 +149,12 @@ export const api = {
     form.append('rights_registry_json', JSON.stringify(controls.rightsRegistry))
     form.append('licence_registry_json', JSON.stringify(controls.licenceRegistry))
     form.append('policy_json', JSON.stringify(controls.publicationPolicy))
+    if (controls.watermarkRegistry) {
+      form.append('watermark_registry_json', JSON.stringify(controls.watermarkRegistry))
+    }
+    if (controls.consentRegistry) {
+      form.append('consent_registry_json', JSON.stringify(controls.consentRegistry))
+    }
     form.append('max_hamming_distance', String(controls.maxHammingDistance ?? 6))
     return request<RightsGateExecutionReceipt>('/rightsgate/assessments', {
       method: 'POST',

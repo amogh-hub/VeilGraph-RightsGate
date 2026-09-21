@@ -16,6 +16,25 @@ async function sha256(file: File) {
   return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('')
 }
 
+async function governedRegistry(
+  file: File | null,
+  fallback: Record<string, unknown>,
+  label: string,
+): Promise<Record<string, unknown>> {
+  if (!file) return fallback
+  if (file.size > 1_000_000) throw new Error(`${label} registry must be 1 MB or smaller.`)
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(await file.text())
+  } catch {
+    throw new Error(`${label} registry is not valid JSON.`)
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`${label} registry must be a JSON object.`)
+  }
+  return parsed as Record<string, unknown>
+}
+
 type MediaMetadata = {
   kind: 'IMAGE' | 'VIDEO' | 'AUDIO'
   mediaType: string
@@ -119,6 +138,8 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
   const [referenceKind, setReferenceKind] = useState<'COPYRIGHTED_WORK' | 'TRADEMARK'>('COPYRIGHTED_WORK')
   const [rightsHolder, setRightsHolder] = useState('Demo rights holder')
   const [licenceEnabled, setLicenceEnabled] = useState(true)
+  const [watermarkRegistryFile, setWatermarkRegistryFile] = useState<File | null>(null)
+  const [consentRegistryFile, setConsentRegistryFile] = useState<File | null>(null)
   const [territory, setTerritory] = useState('IN')
   const [channel, setChannel] = useState('web')
   const [audience, setAudience] = useState('general')
@@ -146,8 +167,8 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
   const unavailable = result?.assessment.components.filter((item) => item.state !== 'AVAILABLE') ?? []
 
   async function assess() {
-    if (!asset || !reference) {
-      setError('Choose both a deployment asset and a governed reference image.')
+    if (!asset) {
+      setError('Choose a deployment asset.')
       return
     }
     setBusy('Binding asset bytes and governed reference')
@@ -157,18 +178,21 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
     try {
       const [assetSha, referenceSha, metadata] = await Promise.all([
         sha256(asset),
-        sha256(reference),
+        reference ? sha256(reference) : Promise.resolve(null),
         mediaMetadata(asset),
       ])
-      const referenceId = `reference.${referenceKind === 'TRADEMARK' ? 'mark' : 'work'}-${referenceSha.slice(0, 16)}`
-      const sourceRecordId = `rights-record.${referenceSha.slice(0, 20)}`
-      const governedReference = await api.deriveRightsImageReference(reference, {
-        referenceId,
-        kind: referenceKind,
-        title: reference.name,
-        rightsHolder,
-        sourceRecordId,
-      })
+      const referenceId = referenceSha
+        ? `reference.${referenceKind === 'TRADEMARK' ? 'mark' : 'work'}-${referenceSha.slice(0, 16)}`
+        : null
+      const governedReference = reference && referenceSha && referenceId
+        ? await api.deriveRightsImageReference(reference, {
+            referenceId,
+            kind: referenceKind,
+            title: reference.name,
+            rightsHolder,
+            sourceRecordId: `rights-record.${referenceSha.slice(0, 20)}`,
+          })
+        : null
       setBusy('Executing provenance, rights and deployment gates')
       const now = Date.now()
       const policyId = 'policy.techgium-demo'
@@ -215,13 +239,13 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
         schema: 'veilgraph.rightsgate.rights-reference-registry.v1',
         registry_id: 'registry.techgium-demo-rights',
         version: '2026.09.1',
-        references: [governedReference],
+        references: governedReference ? [governedReference] : [],
       }
       const licenceRegistry = {
         schema: 'veilgraph.rightsgate.licence-registry.v1',
         registry_id: 'registry.techgium-demo-licences',
         version: '2026.09.1',
-        licences: licenceEnabled ? [{
+        licences: licenceEnabled && referenceId && referenceSha ? [{
           licence_id: `licence.${referenceSha.slice(0, 20)}`,
           source_record_id: `licence-record.${referenceSha.slice(0, 20)}`,
           reference_ids: [referenceId],
@@ -235,6 +259,23 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
           intended_uses: [intendedUse],
         }] : [],
       }
+      const emptyWatermarkRegistry = {
+        schema: 'veilgraph.rightsgate.visible-watermark-registry.v1',
+        registry_id: 'registry.techgium-demo-watermarks',
+        version: '2026.09.1',
+        profiles: [],
+      }
+      const emptyConsentRegistry = {
+        schema: 'veilgraph.rightsgate.consent-registry.v1',
+        registry_id: 'registry.techgium-demo-consents',
+        version: '2026.09.1',
+        likeness_templates: [],
+        voice_templates: [],
+      }
+      const [watermarkRegistry, consentRegistry] = await Promise.all([
+        governedRegistry(watermarkRegistryFile, emptyWatermarkRegistry, 'Visible-watermark'),
+        governedRegistry(consentRegistryFile, emptyConsentRegistry, 'Consent'),
+      ])
       const publicationPolicy = {
         schema: 'veilgraph.rightsgate.publication-policy.v1',
         policy_id: policyId,
@@ -253,9 +294,11 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
           : [
               'provenance.c2pa',
               'provenance.independent-forensics',
+              ...(metadata.kind === 'IMAGE' ? ['provenance.watermark-forensics'] : []),
               'rights.local-image-registry',
               'rights.licence-evaluator',
               'rights.trademark-localizer',
+              ...(metadata.kind === 'IMAGE' ? ['rights.likeness-consent'] : []),
               ...(metadata.kind === 'VIDEO' ? ['ingestion.video-timeline-analyzer'] : []),
             ],
         require_known_provenance: true,
@@ -279,6 +322,8 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
         rightsRegistry,
         licenceRegistry,
         publicationPolicy,
+        watermarkRegistry,
+        consentRegistry,
       })
       setResult(receipt)
       setBusy('Creating signed CMS workflow receipt')
@@ -302,6 +347,8 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
     setError(null)
     setAsset(null)
     setReference(null)
+    setWatermarkRegistryFile(null)
+    setConsentRegistryFile(null)
     setCmsReceipt(null)
   }
 
@@ -338,7 +385,7 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
             <p>One evidence-bound gate for provenance, rights exposure and deployment readiness. Unknown evidence never becomes silent approval.</p>
           </div>
           <div className="rg-hero-proof">
-            <span>EXECUTION BOUNDARY</span><strong>Fail closed</strong><small>C2PA · reference retrieval · licence policy</small>
+            <span>EXECUTION BOUNDARY</span><strong>Fail closed</strong><small>C2PA · watermarks · rights &amp; consent · policy</small>
           </div>
         </section>
 
@@ -346,7 +393,7 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
           <section className="rg-intake">
             <div className="rg-intake-heading">
               <div><span className="overline">NEW ASSESSMENT</span><h2>Bind the media to its deployment context</h2></div>
-              <p>The reference image is converted server-side into a content-addressed governed record. Raw assets are not persisted by this workflow.</p>
+              <p>Optional governed references and registries are converted or validated server-side. Raw assets are not persisted by this workflow.</p>
             </div>
             <div className="rg-intake-grid">
               <label className={`rg-drop ${asset ? 'ready' : ''}`}>
@@ -357,7 +404,7 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
               <label className={`rg-drop ${reference ? 'ready' : ''}`}>
                 <input type="file" accept="image/png,image/jpeg" onChange={(event) => setReference(event.target.files?.[0] ?? null)} />
                 {referenceUrl ? <img src={referenceUrl} alt="Governed reference preview" /> : <i>02</i>}
-                <span><strong>{reference?.name ?? 'Governed reference'}</strong><small>Copyrighted work or trademark reference</small></span>
+                <span><strong>{reference?.name ?? 'Governed reference · optional'}</strong><small>Copyrighted work or trademark reference</small></span>
               </label>
               <div className="rg-context-form">
                 <label><span>Reference type</span><select value={referenceKind} onChange={(event) => setReferenceKind(event.target.value as typeof referenceKind)}><option value="COPYRIGHTED_WORK">Copyrighted work</option><option value="TRADEMARK">Trademark</option></select></label>
@@ -366,12 +413,14 @@ export function RightsGateApp({ onOpenPrivacy }: Props) {
                 <label><span>Territory</span><input value={territory} maxLength={2} onChange={(event) => setTerritory(event.target.value.toUpperCase())} /></label>
                 <label><span>Channel</span><input value={channel} onChange={(event) => setChannel(event.target.value)} /></label>
                 <label><span>Audience</span><input value={audience} onChange={(event) => setAudience(event.target.value)} /></label>
+                <label className="rg-wide"><span>Visible-watermark registry · optional JSON</span><input type="file" accept="application/json,.json" onChange={(event) => setWatermarkRegistryFile(event.target.files?.[0] ?? null)} /></label>
+                <label className="rg-wide"><span>Likeness / voice consent registry · optional JSON</span><input type="file" accept="application/json,.json" onChange={(event) => setConsentRegistryFile(event.target.files?.[0] ?? null)} /></label>
                 <label className="rg-switch"><input type="checkbox" checked={licenceEnabled} onChange={(event) => setLicenceEnabled(event.target.checked)} /><span><i />Valid licence record supplied</span></label>
               </div>
             </div>
             <div className="rg-intake-footer">
               <div><strong>No unsupported clearance.</strong><span>A missing credential or no registry match remains `UNKNOWN`. Unimplemented detectors are returned explicitly.</span></div>
-              <button className="rg-run" disabled={Boolean(busy) || !asset || !reference || !rightsHolder || territory.length !== 2} onClick={assess}>Run three-dimension assessment <span>→</span></button>
+              <button className="rg-run" disabled={Boolean(busy) || !asset || (Boolean(reference) && !rightsHolder) || territory.length !== 2} onClick={assess}>Run three-dimension assessment <span>→</span></button>
             </div>
           </section>
         ) : (

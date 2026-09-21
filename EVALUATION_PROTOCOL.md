@@ -12,6 +12,8 @@ A second frozen 64-case manifest evaluates two additional bounded lanes: 16 loca
 
 The same manifest includes a deliberately narrow credentials/invisible-watermark-only ablation. Because none of its fixtures contains credential or watermark ground truth, that baseline abstains on all 64 cases (accuracy `0.50`, recall `0.00`), while the full bounded signal pipeline reaches accuracy and recall `1.00`. This demonstrates implemented value beyond those signals only on this declared synthetic set; it is not a representative product comparison.
 
+A third frozen 96-case manifest covers configured visible-watermark inversion, enrolled-image candidate retrieval, enrolled PCM/WAV acoustic-reference retrieval and deployment-context consent conflicts. Each 32-case detection lane contains 16 positives and 16 negatives; the consent-scope slice contains 16 covered and 16 conflicting matched cases. The checked summary reports `1.00` accuracy/recall and `0.00` false-positive rate for all four bounded measurements. These are synthetic control-path sanity results, not biometric identification or general watermark performance.
+
 ## Dataset governance
 
 Each asset record must contain:
