@@ -1,0 +1,25 @@
+{
+  "schema": "veilgraph.rightsgate.c2pa-interoperability-manifest.v1",
+  "dataset_id": "c2pa-official-jpeg-interoperability-v1",
+  "source_repository": "https://github.com/c2pa-org/public-testfiles",
+  "source_commit": "22beccc075707475b038d8789d0136c009e43143",
+  "source_directory": "legacy/1.4/image/jpeg",
+  "annotation_reference": "https://github.com/c2pa-org/public-testfiles/blob/22beccc075707475b038d8789d0136c009e43143/legacy/1.4/image/README.md",
+  "source_license": "CC-BY-SA-4.0",
+  "fixture_usage": "Evaluation only; binaries are fetched from the pinned upstream commit and never redistributed by this repository.",
+  "label_policy": "Validation is ABSENT, VALID or INVALID as annotated upstream. Tamper-positive means a documented signature, hard-binding, assertion-URI or off-golden-path hash mismatch; absent and valid credentials are negative. The missing-referenced-claim case is excluded from binary tamper scoring because its tamper cause is ambiguous.",
+  "cases": [
+    {"case_id": "adobe-20220124-A.jpg", "sha256": "f999fd78bfe8a83c96e468a078830ba94485bc1bc6fd086fb94a43bd29dd0f23", "expected_validation": "ABSENT", "expected_tamper": false},
+    {"case_id": "adobe-20220124-C.jpg", "sha256": "75a8da33f6eaf1e16bf3b42cd78913b22b2e6a671fda217a508b1ba4230ce864", "expected_validation": "VALID", "expected_tamper": false},
+    {"case_id": "adobe-20220124-CA.jpg", "sha256": "cafc48c53e651f7ba4622d1f72783827074211e42b9634cc863ec3be3c7651b3", "expected_validation": "VALID", "expected_tamper": false},
+    {"case_id": "adobe-20220124-CII.jpg", "sha256": "91cc638e01a01639aa6786184656589fac5aaadda39f8b35fc5d166c28e30403", "expected_validation": "VALID", "expected_tamper": false},
+    {"case_id": "adobe-20220124-E-clm-CAICAI.jpg", "sha256": "b3ff3f00c66602280977d3e4d962a836d33ab83953d0009f7c1e6490d0065feb", "expected_validation": "INVALID", "expected_tamper": null},
+    {"case_id": "adobe-20220124-E-dat-CA.jpg", "sha256": "dae9d121060cec4b6f27ee8acda85ad461cf75f2261d90b463319b787342d7f9", "expected_validation": "INVALID", "expected_tamper": true},
+    {"case_id": "adobe-20220124-E-sig-CA.jpg", "sha256": "0d4c2774f1b7e94b9613bb952b0a76b6a178d22ac6d206d257d2af1376cbbff2", "expected_validation": "INVALID", "expected_tamper": true},
+    {"case_id": "adobe-20220124-E-uri-CA.jpg", "sha256": "56014faf6b97532252c9bb90dcf484923a8aa7bba197e84a8555044a35e4f3a6", "expected_validation": "INVALID", "expected_tamper": true},
+    {"case_id": "adobe-20220124-E-uri-CIE-sig-CA.jpg", "sha256": "ce3d1e504d97cc24c76491323db3269810e75576e0bafd6d10d1dac75bafb638", "expected_validation": "INVALID", "expected_tamper": true},
+    {"case_id": "adobe-20220124-I.jpg", "sha256": "9d33d48863ac4f94711e289bebc43e849d45be1819ee16c479bd9a8385f1ae08", "expected_validation": "ABSENT", "expected_tamper": false},
+    {"case_id": "adobe-20220124-XCA.jpg", "sha256": "4524a15f71dbdd9e96cd6e78a1a17c1260fff04f68900a10fd1279664d260c9e", "expected_validation": "INVALID", "expected_tamper": true},
+    {"case_id": "adobe-20220124-XCI.jpg", "sha256": "9e2caabd5b2847e40ccc54ec973e44ff7ec921132d4622f59890c075528aafe0", "expected_validation": "INVALID", "expected_tamper": true}
+  ]
+}

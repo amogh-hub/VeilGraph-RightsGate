@@ -25,7 +25,7 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | ING-01 | Process images | IMPLEMENTED | Exact hash/size/type/dimension binding and parser-safety tests in trusted execution |
 | ING-02 | Process video | IMPLEMENTED | MP4/MOV byte/dimension/duration binding, every-physical-frame change screen, bounded selected-frame deep analysis, temporal/region evidence rebinding and automated execution test; audio-track rights analysis remains unavailable |
 | ING-03 | Process standalone audio | IMPLEMENTED | Bounded PCM/WAV header and complete-payload decoding, byte/duration binding, malformed/truncated rejection and governed acoustic-reference consent matching |
-| PROV-01 | Verify content credentials/C2PA | IMPLEMENTED | Official offline SDK adapter and no-manifest/status-mapping tests; signed, mismatched, stripped and replayed fixtures remain for `VALIDATED` |
+| PROV-01 | Verify content credentials/C2PA | VALIDATED | Official offline SDK adapter plus a pinned, hash-verified 12-JPEG C2PA interoperability slice: 12/12 absent/valid/invalid classifications and 6 TP, 5 TN, 0 FP, 0 FN on adjudicable tamper labels; selected test certificates are untrusted and a representative/replayed-credential benchmark remains |
 | PROV-02 | Assess wholly AI-generated media | IMPLEMENTED | C2PA and bounded self-declared generator-metadata evidence with synthetic sanity metrics; open-world visual attribution still requires a frozen multi-generator split |
 | PROV-03 | Assess partial generation or manipulation | IMPLEMENTED | Partial-edit declarations and localized non-attributive residual evidence are tested; representative splice/inpaint localization remains for `VALIDATED` |
 | PROV-04 | Detect provenance metadata or watermark tampering | VALIDATED | C2PA mismatch handling plus governed visible-watermark region verification; frozen 32-case inversion sanity lane reports accuracy `1.00`/FPR `0.00`; arbitrary invisible families remain out of scope |
@@ -47,7 +47,7 @@ Target: **Safeguarding Content Rights in the Age of AI-Generated Media**
 | EVAL-01 | Declare test set | IMPLEMENTED | Three versioned frozen synthetic manifests with 192 byte-fingerprinted cases exist; representative legally sourced family splits remain |
 | EVAL-02 | State accuracy and false-positive rate | VALIDATED | Bounded synthetic accuracy/FPR for retrieval, localization, metadata markers, visible-watermark integrity, enrolled likeness/voice and consent scope; no challenge-wide or real-world metric claim |
 | EVAL-03 | Go beyond standards/watermarking | VALIDATED | Frozen 64-case synthetic all-abstain credentials/watermark-only baseline versus full signal pipeline; representative credential/watermark attack ablation remains |
-| SEC-01 | Protect assets, references and audit evidence | RELEASED | Version `v0.5.0-rightsgate-techgium`: updated threat model, secret/runtime exclusions, signed sanitized release envelope, pinned signer verification, release-tampering tests and public release artifact |
+| SEC-01 | Protect assets, references and audit evidence | RELEASED | Version `v0.6.0-rightsgate-techgium`: updated threat model, secret/runtime exclusions, signed sanitized release envelope, pinned signer verification, release-tampering tests and public release artifact |
 
 ## Release rule
 

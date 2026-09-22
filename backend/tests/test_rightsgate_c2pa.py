@@ -116,6 +116,19 @@ def test_valid_credential_without_ai_declaration_does_not_imply_human_authorship
     assert "does not declare" in result.assessment.limitations[0]
 
 
+def test_structurally_valid_untrusted_signer_is_explicitly_limited(monkeypatch) -> None:
+    monkeypatch.setattr(
+        adapter,
+        "_read_manifest",
+        lambda *_: observation("Valid", failures=("signingCredential.untrusted",)),
+    )
+
+    result = adapter.verify_c2pa(b"asset", "image/jpeg", ASSET_SHA256)
+    assert result.assessment.claims[0].outcome == ClaimOutcome.SUPPORTED
+    assert any("untrusted" in item for item in result.assessment.limitations)
+    assert any("untrusted" in item for item in result.assessment.claims[0].limitations)
+
+
 def test_invalid_credential_is_tamper_signal_with_status_codes(monkeypatch) -> None:
     monkeypatch.setattr(
         adapter,
@@ -128,6 +141,19 @@ def test_invalid_credential_is_tamper_signal_with_status_codes(monkeypatch) -> N
     assert result.assessment.claims[0].outcome == ClaimOutcome.CONTRADICTED
     assert result.evidence[0].polarity == EvidencePolarity.CONTRADICTS
     assert result.evidence[0].attributes["failure_codes"] == "assertion.dataHash.mismatch"
+
+
+def test_invalid_hashed_uri_is_tamper_signal(monkeypatch) -> None:
+    monkeypatch.setattr(
+        adapter,
+        "_read_manifest",
+        lambda *_: observation("Invalid", failures=("assertion.hashedURI.mismatch",)),
+    )
+
+    result = adapter.verify_c2pa(b"asset", "image/jpeg", ASSET_SHA256)
+    assert result.assessment.verdict == ProvenanceVerdict.TAMPERED
+    assert result.assessment.claims[0].outcome == ClaimOutcome.CONTRADICTED
+    assert result.evidence[0].attributes["failure_codes"] == "assertion.hashedURI.mismatch"
 
 
 def test_untrusted_credential_is_invalid_but_not_called_tampered(monkeypatch) -> None:

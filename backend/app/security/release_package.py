@@ -60,8 +60,8 @@ def should_exclude(rel: str) -> bool:
         return True
     if Path(name).suffix.lower() in FORBIDDEN_SUFFIXES:
         return True
-    # Never recursively package prior generated ZIPs or phase release output.
-    if rel.startswith("competition/releases/") and rel.lower().endswith(".zip"):
+    # Never recursively package generated releases or their local build reports.
+    if rel.startswith("competition/releases/"):
         return True
     return False
 

@@ -34,7 +34,12 @@ COMPOSITE_GENERATIVE_MEDIA = {
     "compositeWithTrainedAlgorithmicMedia",
     "compositeSynthetic",
 }
-TAMPER_FAILURE_TOKENS = ("hash.mismatch", "signature.mismatch", "timestamp.mismatch")
+TAMPER_FAILURE_TOKENS = (
+    "hash.mismatch",
+    "hasheduri.mismatch",
+    "signature.mismatch",
+    "timestamp.mismatch",
+)
 
 
 class C2PAVerificationResult(StrictFrozenModel):
@@ -241,13 +246,17 @@ def _map_observation(
         confidence = 1.0 if normalized_state == "trusted" else 0.95
         summary = f"The embedded Content Credential is {validation_state}."
         limitations = ()
+        if any("signingcredential.untrusted" in code.casefold() for code in failures):
+            limitations = (
+                "The signing credential is untrusted; structural validation does not authenticate the publisher.",
+            )
         if any(source in COMPOSITE_GENERATIVE_MEDIA for source in sources):
             verdict = ProvenanceVerdict.PARTIALLY_GENERATED
         elif TRAINED_ALGORITHMIC_MEDIA in sources:
             verdict = ProvenanceVerdict.AI_GENERATED
         else:
             verdict = ProvenanceVerdict.UNKNOWN
-            limitations = (
+            limitations += (
                 "The credential validates but does not declare a recognized generative-AI source type.",
             )
     else:
@@ -286,7 +295,7 @@ def _map_observation(
             confidence=confidence,
             mandatory=False,
             evidence_ids=(evidence_id,) if outcome != ClaimOutcome.UNKNOWN else (),
-            limitations=limitations if outcome == ClaimOutcome.UNKNOWN else (),
+            limitations=limitations,
         )
     ]
     if verdict in {

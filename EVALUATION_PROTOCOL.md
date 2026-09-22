@@ -14,6 +14,12 @@ The same manifest includes a deliberately narrow credentials/invisible-watermark
 
 A third frozen 96-case manifest covers configured visible-watermark inversion, enrolled-image candidate retrieval, enrolled PCM/WAV acoustic-reference retrieval and deployment-context consent conflicts. Each 32-case detection lane contains 16 positives and 16 negatives; the consent-scope slice contains 16 covered and 16 conflicting matched cases. The checked summary reports `1.00` accuracy/recall and `0.00` false-positive rate for all four bounded measurements. These are synthetic control-path sanity results, not biometric identification or general watermark performance.
 
+## External C2PA interoperability slice (non-headline)
+
+A separately frozen 12-JPEG slice comes from the [C2PA public testfiles](https://github.com/c2pa-org/public-testfiles) repository at commit `22beccc075707475b038d8789d0136c009e43143`, under CC BY-SA 4.0. Its [upstream annotations](https://github.com/c2pa-org/public-testfiles/blob/22beccc075707475b038d8789d0136c009e43143/legacy/1.4/image/README.md) distinguish absent, structurally valid, and invalid credentials. The fixture binaries are not redistributed here; the checked-in manifest pins source commit, labels and SHA-256 for every file. Run `PYTHONPATH=. python run_rightsgate_c2pa_interop_eval.py --fetch` from `backend/`, or use `--fixture-dir` with previously downloaded files. The runner rejects changed bytes before scoring.
+
+With `c2pa-python` `0.37.10`, the checked report shows `12/12` correct absent/valid/invalid states. Among 11 independently adjudicable tamper controls it shows `6` true positives, `5` true negatives, `0` false positives and `0` false negatives; the missing-referenced-claim case is excluded from binary tamper scoring. The observed FPR is `0/5 = 0`, but its two-sided 95% Wilson upper bound is `0.4345`; validation accuracy `12/12` has a 95% Wilson lower bound of `0.7575`. These are deliberately small, selected *interoperability* measurements, not estimates for real-world AI-media attribution, general watermark tampering, copyright, or the full challenge. The structurally valid Adobe credentials in this slice use untrusted test signing certificates; `VALID` is not a trusted-publisher claim.
+
 ## Dataset governance
 
 Each asset record must contain:

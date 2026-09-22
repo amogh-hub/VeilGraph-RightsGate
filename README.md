@@ -6,7 +6,7 @@
 
 VeilGraph RightsGate is a challenge-focused product line derived from the frozen [VeilGraph](https://github.com/amogh-hub/VeilGraph) privacy-engineering system. The source repository remains unchanged. This repository targets the TECHgium challenge **“Safeguarding Content Rights in the Age of AI-Generated Media.”**
 
-**Status:** `v0.5.0 COMPETITION RELEASE` · `IMAGE + BOUNDED VIDEO/AUDIO EXECUTION IMPLEMENTED` · `C2PA + FORENSIC/WATERMARK TRIAGE IMPLEMENTED` · `WORK/MARK + ENROLLED LIKENESS/VOICE EVIDENCE IMPLEMENTED` · `POLICY + DUAL-CONTROL RELEASE IMPLEMENTED` · `192-CASE SYNTHETIC EVIDENCE FROZEN`
+**Status:** `v0.6.0 COMPETITION RELEASE` · `IMAGE + BOUNDED VIDEO/AUDIO EXECUTION IMPLEMENTED` · `C2PA + FORENSIC/WATERMARK TRIAGE IMPLEMENTED` · `WORK/MARK + ENROLLED LIKENESS/VOICE EVIDENCE IMPLEMENTED` · `POLICY + DUAL-CONTROL RELEASE IMPLEMENTED` · `192 SYNTHETIC + 12 OFFICIAL C2PA INTEROP CASES DECLARED`
 
 ![VeilGraph RightsGate architecture](docs/architecture/rightsgate-architecture.svg)
 
@@ -141,7 +141,21 @@ PYTHONPATH=. python run_rightsgate_signal_eval.py
 PYTHONPATH=. python run_rightsgate_consent_eval.py
 ```
 
-The declared 32-case synthetic resize set reports exact-only accuracy `0.75`, recall `0.50` and FPR `0.00`; its perceptual lane reports `1.00` accuracy/recall and `0.00` FPR. A 64-case set reports `1.00` accuracy and `0.00` FPR for governed-reference localization and self-declared generator metadata, with Brier/ECE/MCE calibration and a credentials/watermark-only ablation. A third 96-case set reports `1.00` accuracy/recall and `0.00` FPR separately for configured visible-watermark inversion, enrolled-image matching, enrolled-acoustic matching and consent-scope conflicts. These are deliberately narrow synthetic engineering metrics—not real-world biometric, watermark, AI, copyright or trademark claims. The checked-in [evaluation manifests and summaries](competition/techgium10/evaluation) record every byte fingerprint and limitation.
+Selected external C2PA interoperability evaluation (explicit network fetch; binaries are not bundled):
+
+```bash
+cd backend
+PYTHONPATH=. python run_rightsgate_c2pa_interop_eval.py --fetch
+```
+
+Prepare a self-checking judge demo in a **new directory outside this repository** (the official C2PA files are optional and fetched only on request):
+
+```bash
+cd backend
+PYTHONPATH=. python prepare_rightsgate_judge_demo.py --output-dir ../../rightsgate-judge-demo-local --fetch-c2pa
+```
+
+The declared 32-case synthetic resize set reports exact-only accuracy `0.75`, recall `0.50` and FPR `0.00`; its perceptual lane reports `1.00` accuracy/recall and `0.00` FPR. A 64-case set reports `1.00` accuracy and `0.00` FPR for governed-reference localization and self-declared generator metadata, with Brier/ECE/MCE calibration and a credentials/watermark-only ablation. A third 96-case set reports `1.00` accuracy/recall and `0.00` FPR separately for configured visible-watermark inversion, enrolled-image matching, enrolled-acoustic matching and consent-scope conflicts. These are deliberately narrow synthetic engineering metrics—not real-world biometric, watermark, AI, copyright or trademark claims. A separate 12-case official C2PA JPEG interoperability slice classifies 12/12 credential states correctly and observes 0/5 tamper false positives, with a 95% Wilson upper bound of 0.4345. This small selected set is not representative challenge-wide performance. The checked-in [evaluation manifests and summaries](competition/techgium10/evaluation) record byte fingerprints, raw predictions and limitations.
 
 ## RightsGate API and review workflow
 

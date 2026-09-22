@@ -20,7 +20,7 @@ from app.security.network_guard import (
     disable_egress_guard_for_tests,
     install_egress_guard,
 )
-from app.security.release_package import build_release_package, verify_release_package_bytes
+from app.security.release_package import build_release_package, should_exclude, verify_release_package_bytes
 from app.security.workspace import WorkspaceError, create_workspace, destroy_workspace
 
 
@@ -194,8 +194,12 @@ def test_sanitized_release_excludes_runtime_secrets_and_database(tmp_path):
     (tmp_path / "state.db").write_bytes(b"sqlite")
     (tmp_path / "frontend.tsbuildinfo").write_text("build cache")
     (tmp_path / ".env").write_text("TOKEN=secret")
+    (tmp_path / "competition/releases").mkdir(parents=True)
+    (tmp_path / "competition/releases/archive.zip").write_bytes(b"prior archive")
+    (tmp_path / "competition/releases/build-report.json").write_text("{}")
     package, manifest = build_release_package(tmp_path, phase="test")
     assert manifest["entry_count"] == 1
+    assert should_exclude("competition/releases/build-report.json")
     with zipfile.ZipFile(io.BytesIO(package)) as archive:
         names = archive.namelist()
         assert "backend/app.py" in names
@@ -203,6 +207,7 @@ def test_sanitized_release_excludes_runtime_secrets_and_database(tmp_path):
         assert "state.db" not in names
         assert "frontend.tsbuildinfo" not in names
         assert ".env" not in names
+        assert not any(name.startswith("competition/releases/") for name in names)
     assert verify_release_package_bytes(package)["valid"] is True
 
 

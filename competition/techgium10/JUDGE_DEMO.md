@@ -4,14 +4,19 @@ This script demonstrates the exact implemented boundary. Use only synthetic or p
 
 ## Before the session
 
-1. Check out tag `v0.5.0-rightsgate-techgium` and run `./scripts/setup_once.sh`.
+1. Check out tag `v0.6.0-rightsgate-techgium` and run `./scripts/setup_once.sh`.
 2. Run `./scripts/run_backend.sh` and `./scripts/run_frontend.sh` in separate terminals.
-3. Reproduce all three frozen evaluations from `backend/`:
+3. Prepare a fresh local fixture directory outside the repository:
+   - `cd backend && PYTHONPATH=. python prepare_rightsgate_judge_demo.py --output-dir ../../rightsgate-judge-demo-local --fetch-c2pa`
+   - If that directory already exists, choose a new name; the generator will not overwrite it. The `--fetch-c2pa` option uses pinned SHA-256-verified official CC BY-SA 4.0 fixtures; omit it for an offline synthetic-only pack.
+   - Read the generated `DEMO_GUIDE.txt` and `DEMO_MANIFEST.json` before presenting.
+4. Reproduce the three synthetic evaluations and selected official C2PA interoperability evaluation from `backend/`:
    - `PYTHONPATH=. python run_rightsgate_eval.py`
    - `PYTHONPATH=. python run_rightsgate_signal_eval.py`
    - `PYTHONPATH=. python run_rightsgate_consent_eval.py`
-4. Keep one clean image, one configured-watermark mismatch, one governed reference candidate, one consent-scope conflict and one PCM/WAV voice-reference case ready.
-5. Confirm that no private, unlicensed or biometric production data is present.
+   - `PYTHONPATH=. python run_rightsgate_c2pa_interop_eval.py --fetch`
+5. Keep the generated intact campaign image, altered-watermark image, governed reference and registry JSON ready. Prepare a separate consent-scope and PCM/WAV case only if those lanes will be shown.
+6. Confirm that no private, unlicensed or biometric production data is present.
 
 ## 0:00–0:25 — Problem and differentiator
 
@@ -21,23 +26,25 @@ Show the three output dimensions and the Asset Exposure Graph in the review scre
 
 ## 0:25–1:05 — Provenance and tampering
 
-Submit the configured-watermark mismatch. Show:
+Submit `synthetic-campaign-watermark-altered.png` with `synthetic-watermark-registry.json`. Show:
 
 - exact asset SHA-256 and component version;
 - C2PA result and independent forensic triage as separate evidence;
 - the configured watermark region, registry commitment and mismatch distance;
 - provenance `TAMPERED` and the resulting policy `BLOCK`.
 
-State the boundary: "An intact enrolled visible watermark does not prove authenticity, and arbitrary invisible-watermark families are outside this release."
+Then, if time allows, submit `official-c2pa-adobe-20220124-E-uri-CA.jpg` and show the independently detected assertion-URI hash mismatch. State the boundary: "An intact enrolled visible watermark does not prove authenticity, and arbitrary invisible-watermark families are outside this release. These C2PA files are interoperability examples, not an AI-detection benchmark."
 
 ## 1:05–1:45 — Rights, licence and consent reasoning
 
-Submit the governed reference/identity case. Show:
+Submit `synthetic-campaign-intact.png` with `synthetic-campaign-reference.png`. Disable the valid-licence toggle to demonstrate a governed rights conflict. Show:
 
 - work or mark candidate and localized region evidence;
 - licence validity, territory, channel and intended-use evaluation;
 - person or voice node, consent record and `CONSENTED_BY` edge;
-- a territory mismatch producing `POLICY_CONFLICT` and `BLOCK`.
+- the absent licence producing `POLICY_CONFLICT` and `BLOCK`.
+
+For a territory-scope demo, use a separately governed licence/consent fixture; the standard review UI's licence toggle creates a same-territory licence and does not itself demonstrate a territory mismatch.
 
 State the boundary: "Similarity is candidate evidence, not infringement, ownership, face recognition or speaker identification. Consent comes only from the governed record."
 
@@ -53,8 +60,9 @@ Open the checked-in evaluation summaries. State:
 - 64 localization/generator-metadata cases with calibration and a standards/watermark-only ablation;
 - 96 visible-watermark, enrolled-likeness, enrolled-voice and consent-scope cases;
 - 192 total byte-fingerprinted synthetic cases.
+- a separate 12-case selected official C2PA JPEG slice: 12/12 correct credential states; among 11 adjudicable tamper labels, 6 TP, 5 TN, 0 FP and 0 FN. Its 0/5 observed FPR has a 95% Wilson upper bound of about 43%.
 
-Say: "The reported accuracy and false-positive rates are valid only for these declared transformations. We do not generalize them to real-world media."
+Say: "The synthetic results cover only declared transformations. The official C2PA slice checks interoperability, with untrusted test certificates and a small denominator. None of these metrics estimates challenge-wide real-world accuracy."
 
 ## 2:45–3:00 — Close
 
