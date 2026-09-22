@@ -4,7 +4,7 @@ This script demonstrates the exact implemented boundary. Use only synthetic or p
 
 ## Before the session
 
-1. Check out tag `v0.6.0-rightsgate-techgium` and run `./scripts/setup_once.sh`.
+1. Check out tag `v0.6.1-rightsgate-techgium` and run `./scripts/setup_once.sh`.
 2. Run `./scripts/run_backend.sh` and `./scripts/run_frontend.sh` in separate terminals.
 3. Prepare a fresh local fixture directory outside the repository:
    - `cd backend && PYTHONPATH=. python prepare_rightsgate_judge_demo.py --output-dir ../../rightsgate-judge-demo-local --fetch-c2pa`
@@ -15,6 +15,7 @@ This script demonstrates the exact implemented boundary. Use only synthetic or p
    - `PYTHONPATH=. python run_rightsgate_signal_eval.py`
    - `PYTHONPATH=. python run_rightsgate_consent_eval.py`
    - `PYTHONPATH=. python run_rightsgate_c2pa_interop_eval.py --fetch`
+   - `PYTHONPATH=. python -m pytest tests/test_rightsgate_judge_acceptance.py -q` checks the generated demo assets against the real assessment and signed CMS-decision endpoints.
 5. Keep the generated intact campaign image, altered-watermark image, governed reference and registry JSON ready. Prepare a separate consent-scope and PCM/WAV case only if those lanes will be shown.
 6. Confirm that no private, unlicensed or biometric production data is present.
 

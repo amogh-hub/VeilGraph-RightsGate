@@ -103,7 +103,8 @@ class RightsReferenceRegistry(StrictFrozenModel):
     )
     registry_id: str = Field(pattern=ID_PATTERN)
     version: str = Field(min_length=1, max_length=100)
-    references: tuple[RegistryImage, ...] = Field(min_length=1)
+    # An empty registry is a valid declared input, not evidence of rights clearance.
+    references: tuple[RegistryImage, ...] = ()
 
     @model_validator(mode="after")
     def require_unique_references(self) -> RightsReferenceRegistry:

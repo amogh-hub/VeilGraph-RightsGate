@@ -22,13 +22,13 @@ This document is the authoritative, claim-bounded record of the current TECHgium
 | Voice detection | 🟡 Governed PCM/WAV acoustic-reference matching plus context-scoped consent validation is implemented; this is not speaker identification or acoustic-work recognition |
 | Brand/regulatory/regional policy execution | 🟡 Audience, brand-profile, channel, territory and scoped `REVIEW`/`BLOCK` regulatory rules implemented; curated jurisdiction-specific packs missing |
 | End-to-end three-dimension orchestration | ✅ Implemented with durable idempotency for images, bounded video and PCM/WAV, including optional watermark and consent registries with explicit abstention |
-| RightsGate review UI/CMS integration | 🟡 Dedicated review UI, signed non-authorizing CMS decision contract, and short-lived dual-control release authorization implemented; authenticated vendor webhook delivery remains missing |
+| RightsGate review UI/CMS integration | 🟡 Dedicated review UI, signed non-authorizing CMS decision contract, and short-lived dual-control release authorization implemented; generated demo assets are acceptance-tested through the assessment and signed CMS APIs, but authenticated vendor webhook delivery remains missing |
 | Image, video and audio coverage | 🟡 Image is the strongest lane; bounded MP4/MOV full-timeline change screening and standalone PCM/WAV voice-reference matching are implemented, while video audio-track and open-world acoustic-work detection remain incomplete |
 | Declared frozen test set | 🟡 Three synthetic manifests total 192 byte-fingerprinted cases; a separate 12-case externally sourced C2PA JPEG interoperability manifest is pinned and hash-verified; representative full-challenge real-world sets are missing |
 | Accuracy and false-positive rates | 🟡 Reproducible synthetic metrics cover seven bounded lanes; a separate selected C2PA slice has 12/12 validation accuracy and 0/5 observed tamper FPR (95% Wilson upper bound 0.4345). Challenge-wide or representative real-world accuracy/FPR cannot be claimed |
 | Confidence calibration | 🟡 Brier score, fixed-bin ECE and MCE are reproducible on the frozen synthetic signal set; representative calibration is missing |
 | Comparison against C2PA/watermark-only baselines | 🟡 A frozen credentials/watermark-only all-abstain ablation is implemented for fixtures containing no such evidence; a representative attack set is missing |
-| Signed competition release and demo | 🟡 Version `v0.6.0-rightsgate-techgium` is frozen as a sanitized Ed25519-signed archive; a self-checking judge-demo pack generator exists, but portal-specific rehearsal/recording remains |
+| Signed competition release and demo | 🟡 Version `v0.6.1-rightsgate-techgium` is frozen as a sanitized Ed25519-signed archive; the self-checking judge-demo pack is covered by end-to-end API acceptance tests, but portal-specific rehearsal/recording remains |
 
 ## What is locked in
 
@@ -43,6 +43,7 @@ This document is the authoritative, claim-bounded record of the current TECHgium
 - The image executor binds exact asset bytes, both governed registry commitments, policy, retrieval threshold and executor version; it persists idempotent results under recoverable leases and verifies stored commitments on read.
 - Licence evaluation covers explicit status, date, territory, channel and intended use. The policy compiler makes evidence-cited decisions while preserving unavailable mandatory detectors.
 - The RightsGate review screen runs this integrated workflow and displays all three dimensions, evidence, component health and policy citations.
+- The demo-pack acceptance test exercises licensed, unlicensed, no-reference and visible-watermark-tampered assets through the assessment and signed CMS-decision APIs. An empty governed reference registry is accepted as a declared input but produces rights `UNKNOWN` and a non-authorizing `REVIEW`, never clearance.
 - The policy supports deterministic, context-scoped regulatory `REVIEW` and `BLOCK` rules. The UI converts immutable results into deterministic Ed25519-signed CMS workflow receipts; every receipt retains `release_authorization: false`.
 - A separate release boundary accepts only a signed CMS `GO`, then requires fresh Ed25519 approvals from distinct trusted `RIGHTS_REVIEWER` and `RELEASE_MANAGER` identities. It binds the asset, assessment, CMS content, trust-registry commitment and approval commitments into a short-lived signed authorization; expiry, revocation, role substitution and tampering fail closed.
 - MP4/MOV execution reuses VeilGraph's every-physical-frame change screen, then runs image forensics, retrieval and localization over security-selected frames within an explicit budget. PCM/WAV execution verifies the complete payload and can compare a bounded acoustic fingerprint with enrolled consent references while abstaining on speaker identity and acoustic-work clearance.
@@ -50,7 +51,7 @@ This document is the authoritative, claim-bounded record of the current TECHgium
 - The 64-case report now includes confidence calibration (Brier/ECE/MCE) and a standards/watermark-only ablation. The full bounded signal pipeline has accuracy `1.00` versus `0.50` for the all-abstain baseline, but this is synthetic evidence only.
 - A separate pinned, externally sourced C2PA interoperability slice adds 12 official JPEGs without adding those binaries to this repository. It exposed and fixed a missed assertion-URI hash-mismatch tamper status. Its 12/12 credential-state classifications and 6 TP/5 TN/0 FP/0 FN adjudicable tamper result are narrow; untrusted test certificates and wide small-sample confidence intervals prohibit a general trust or accuracy claim.
 - A separate 96-case synthetic manifest reproduces 16 TP, 16 TN, 0 FP and 0 FN independently for governed visible-watermark tampering, enrolled-likeness retrieval and enrolled-voice retrieval, plus consent-scope conflict evaluation. These deliberately narrow results cannot be generalized to real people, voices or watermark families.
-- The release candidate passed the 375-test backend suite, Python and npm dependency audits, frontend type checking and frontend production build locally; the tagged commit is released only after the same GitHub CI gates pass.
+- The release candidate passed the 382-test backend suite, Python and npm dependency audits, frontend type checking and frontend production build locally; the tagged commit is released only after the same GitHub CI gates pass.
 
 ## Claim boundary
 

@@ -6,7 +6,7 @@
 
 VeilGraph RightsGate is a challenge-focused product line derived from the frozen [VeilGraph](https://github.com/amogh-hub/VeilGraph) privacy-engineering system. The source repository remains unchanged. This repository targets the TECHgium challenge **“Safeguarding Content Rights in the Age of AI-Generated Media.”**
 
-**Status:** `v0.6.0 COMPETITION RELEASE` · `IMAGE + BOUNDED VIDEO/AUDIO EXECUTION IMPLEMENTED` · `C2PA + FORENSIC/WATERMARK TRIAGE IMPLEMENTED` · `WORK/MARK + ENROLLED LIKENESS/VOICE EVIDENCE IMPLEMENTED` · `POLICY + DUAL-CONTROL RELEASE IMPLEMENTED` · `192 SYNTHETIC + 12 OFFICIAL C2PA INTEROP CASES DECLARED`
+**Status:** `v0.6.1 COMPETITION RELEASE` · `IMAGE + BOUNDED VIDEO/AUDIO EXECUTION IMPLEMENTED` · `C2PA + FORENSIC/WATERMARK TRIAGE IMPLEMENTED` · `WORK/MARK + ENROLLED LIKENESS/VOICE EVIDENCE IMPLEMENTED` · `POLICY + DUAL-CONTROL RELEASE IMPLEMENTED` · `192 SYNTHETIC + 12 OFFICIAL C2PA INTEROP CASES DECLARED`
 
 ![VeilGraph RightsGate architecture](docs/architecture/rightsgate-architecture.svg)
 

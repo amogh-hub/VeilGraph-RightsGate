@@ -6,7 +6,7 @@
 - [x] Public challenge repository separated as `amogh-hub/VeilGraph-RightsGate`.
 - [x] Challenge traceability has no `PLANNED`, `INHERITED` or `BLOCKED` rows.
 - [x] Backend, frontend, dependency-audit and frozen-evaluation gates pass.
-- [x] `v0.5.0-rightsgate-techgium` signed sanitized archive and public GitHub release created.
+- [x] `v0.6.1-rightsgate-techgium` signed sanitized archive and public GitHub release created.
 - [ ] Verify the release URL and asset digest from a second machine before the final presentation.
 
 ## Portal material
@@ -21,6 +21,7 @@
 
 - [x] Three-minute judge script prepared in `JUDGE_DEMO.md`.
 - [x] Clean, ambiguous and blocked behavior is explainable from evidence and policy citations.
+- [x] Synthetic demo assets exercised through the assessment and signed CMS-decision APIs, including no-reference uncertainty.
 - [x] Frozen synthetic results and limitations are checked in.
 - [ ] Record and rehearse a portal-specific demo on the presentation machine.
 - [ ] Test the offline path, display scaling, audio output and backup video.
